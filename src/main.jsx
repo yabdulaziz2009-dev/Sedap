@@ -1,6 +1,5 @@
 import { Children } from "react";
 import App from "./App";
-import Root from "./routes/root";
 
 const router = createBrowserRouter([
   {
