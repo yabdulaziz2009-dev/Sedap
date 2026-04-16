@@ -1,0 +1,30 @@
+import { useState, useEffect } from "react";
+
+function useOrders() {
+  const [orders, setOrders]           = useState([]);   // список заказов
+  const [loading, setLoading]         = useState(true); // грузится?
+  const [statusFilter, setStatusFilter] = useState("All Status"); // фильтр
+
+  useEffect(() => {
+    fetch("http://localhost:3001/orders")
+      .then(res => res.json())
+      .then(data => {
+        setOrders(data);  // кладём данные в стейт
+        setLoading(false);
+      });
+  }, []); // [] = запустить только 1 раз
+
+  // Фильтрация на клиенте
+  const filtered = statusFilter === "All Status"
+    ? orders
+    : orders.filter(o => o.status === statusFilter);
+
+  return {
+    orders: filtered,
+    loading,
+    statusFilter,
+    setStatusFilter,
+  };
+}
+
+export default useOrders;
