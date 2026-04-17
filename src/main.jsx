@@ -1,14 +1,22 @@
-import { Children } from "react";
+import React from "react";
+import ReactDOM from "react-dom/client";
 import App from "./App";
 import Home from "./Pages/Home";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Foods from "./Pages/Foods";
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
-    Children: [
+    errorElement: <div>404 Not Found</div>,
+    children: [
       {
         path: "/",
         element: <Home/>,
+      },
+      {
+        path:"/Foods",
+        element:<Foods/>
       },
     ],
   },
