@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "json-server --watch db.json --port 3001",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -14,6 +15,7 @@
     "axios": "^1.15.0",
     "chart": "^0.1.2",
     "daisyui": "^5.5.19",
+    "firebase": "^12.12.0",
     "i18": "^0.0.6",
     "localforage": "^1.10.0",
     "match-sorter": "^8.2.0",
@@ -34,6 +36,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.4.0",
+    "json-server": "^1.0.0-beta.3",
     "vite": "^7.1.7"
   }
 }

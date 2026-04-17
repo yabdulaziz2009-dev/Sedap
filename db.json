@@ -1,0 +1,18 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "fullName": "Aziz Rahimov",
+      "email": "aziz@gmail.com",
+      "password": "1234",
+      "createdAt": "2026-04-17T07:00:00.000Z"
+    },
+    {
+      "id": "2",
+      "fullName": "Malika Sobirova",
+      "email": "malika@gmail.com",
+      "password": "5678",
+      "createdAt": "2026-04-17T07:05:00.000Z"
+    }
+  ]
+}
