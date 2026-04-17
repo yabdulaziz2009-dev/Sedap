@@ -11,6 +11,9 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
+
+
+
 const foodItems = [
   { id: 1, img: "🍝", name: "Medium Spicy Spaghetti Italiano", cat: "SPAGHETTI", price: "$12.56", time: "24 mins", serves: "4 Person" },
   { id: 2, img: "🍜", name: "Medium Spicy Spaghetti Italiano", cat: "SPAGHETTI", price: "$12.56", time: "24 mins", serves: "4 Person" },
@@ -18,7 +21,6 @@ const foodItems = [
   { id: 4, img: "🍲", name: "Medium Spicy Spaghetti Italiano", cat: "SPAGHETTI", price: "$12.56", time: "24 mins", serves: "4 Person" },
   { id: 5, img: "🍔", name: "Medium Spicy Spaghetti Italiano", cat: "SPAGHETTI", price: "$12.56", time: "24 mins", serves: "4 Person" },
 ];
-
 
 const chartColors = {
   Spaghetti: "#3B82F6",
