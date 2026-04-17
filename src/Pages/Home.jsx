@@ -1,37 +1,26 @@
-<<<<<<< HEAD
-import React from 'react'
-import Foods from './Foods'
-=======
-import React, { useEffect, useState } from 'react'
-import axios from 'axios'
+import React, { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchFoods } from '../store/slices/Food'
 import pizzaImage from '../assets/pizza.svg'
 import lagmonImage from '../assets/lagmon.svg'
->>>>>>> b2dcf402013734536cca94a60467f63a5070e3b5
+
+const mockAnalytics = {
+  revenue: 84320,
+  bestSelling: 'Lagmon',
+  dailyAverage: '1,245',
+}
 
 const Home = () => {
-  const [analytics, setAnalytics] = useState(null)
-  const [foods, setFoods] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const dispatch = useDispatch()
+  const { foods, loading, error } = useSelector((state) => state.food)
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const [analyticsRes, foodsRes] = await Promise.all([
-          axios.get('http://localhost:4000/api/analytics'),
-          axios.get('http://localhost:4000/api/foods'),
-        ])
-        setAnalytics(analyticsRes.data)
-        setFoods(foodsRes.data)
-      } catch (err) {
-        setError('Serverga ulanishda xatolik bo‘ldi. Backendni ishga tushiring va qayta urinib ko‘ring.')
-      } finally {
-        setLoading(false)
-      }
+    if (foods.length === 0) {
+      dispatch(fetchFoods())
     }
+  }, [dispatch, foods.length])
 
-    fetchDashboard()
-  }, [])
+  const analytics = mockAnalytics
 
   if (loading) {
     return <div className="text-slate-700">Yuklanmoqda...</div>
@@ -42,10 +31,6 @@ const Home = () => {
   }
 
   return (
-<<<<<<< HEAD
-    <div>
-      <Foods />
-=======
     <div className="space-y-6">
       <section className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
         <div className="rounded-[2rem] bg-white p-6 shadow-sm shadow-slate-200">
@@ -133,17 +118,21 @@ const Home = () => {
               </div>
             </div>
             <div className="mt-5 space-y-4">
-              {foods.slice(0, 4).map((food, index) => (
+              {foods.slice(0, 4).map((food) => (
                 <div key={food.id} className="flex items-center justify-between rounded-3xl border border-slate-200 p-4">
                   <div className="flex items-center gap-4">
-                    <div className="h-16 w-16 rounded-3xl bg-slate-100" />
+                    <div className="h-16 w-16 rounded-3xl bg-slate-100 overflow-hidden">
+                      {food.image && (
+                        <img src={food.image} alt={food.name} className="h-full w-full object-cover" />
+                      )}
+                    </div>
                     <div>
                       <p className="font-semibold text-slate-900">{food.name}</p>
                       <p className="text-sm text-slate-500">{food.category}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-slate-900">${food.price.toFixed(2)}</p>
+                    <p className="text-lg font-semibold text-slate-900">${food.price?.toFixed(2)}</p>
                     <p className="text-sm text-slate-500">Top selling</p>
                   </div>
                 </div>
@@ -255,7 +244,6 @@ const Home = () => {
           </div>
         </div>
       </section>
->>>>>>> b2dcf402013734536cca94a60467f63a5070e3b5
     </div>
   )
 }

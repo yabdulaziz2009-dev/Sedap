@@ -1,4 +1,5 @@
 import React from 'react'
+import { NavLink } from 'react-router-dom'
 import {
   HiChartBar,
   HiHome,
@@ -13,18 +14,16 @@ import {
 } from 'react-icons/hi2'
 
 const navItems = [
-  { label: 'Dashboard', icon: HiHome, active: false },
-  { label: 'Order List', icon: HiShoppingBag, active: false },
-  { label: 'Order Detail', icon: HiReceiptPercent, active: false },
-  { label: 'Customer', icon: HiOutlineUsers, active: false },
-  { label: 'Analytics', icon: HiChartBar, active: true },
-  { label: 'Reviews', icon: HiStar, active: false },
-  { label: 'Foods', icon: HiShoppingCart, active: false },
-  { label: 'Food Detail', icon: HiReceiptPercent, active: false },
-  { label: 'Customer Detail', icon: HiOutlineUsers, active: false },
-  { label: 'Calendar', icon: HiCalendar, active: false },
-  { label: 'Chat', icon: HiChatBubbleLeftRight, active: false },
-  { label: 'Wallet', icon: HiWallet, active: false },
+  { label: 'Dashboard', icon: HiHome, path: '/' },
+  { label: 'Order List', icon: HiShoppingBag, path: '/orders' },
+  { label: 'Order Detail', icon: HiReceiptPercent, path: '/orders/detail' },
+  { label: 'Customer', icon: HiOutlineUsers, path: '/customers' },
+  { label: 'Analytics', icon: HiChartBar, path: '/analytics' },
+  { label: 'Reviews', icon: HiStar, path: '/reviews' },
+  { label: 'Foods', icon: HiShoppingCart, path: '/foods' },
+  { label: 'Calendar', icon: HiCalendar, path: '/calendar' },
+  { label: 'Chat', icon: HiChatBubbleLeftRight, path: '/chat' },
+  { label: 'Wallet', icon: HiWallet, path: '/wallet' },
 ]
 
 const Sidebar = () => {
@@ -39,17 +38,21 @@ const Sidebar = () => {
         {navItems.map((item) => {
           const Icon = item.icon
           return (
-            <button
+            <NavLink
               key={item.label}
-              className={`w-full flex items-center gap-3 rounded-3xl px-4 py-3 text-left text-sm transition ${
-                item.active
-                  ? 'bg-slate-200 text-slate-950 font-semibold'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
+              to={item.path}
+              end={item.path === '/'}
+              className={({ isActive }) =>
+                `w-full flex items-center gap-3 rounded-3xl px-4 py-3 text-left text-sm transition ${
+                  isActive
+                    ? 'bg-slate-200 text-slate-950 font-semibold'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`
+              }
             >
               <Icon className="h-5 w-5" />
               <span>{item.label}</span>
-            </button>
+            </NavLink>
           )
         })}
       </nav>
