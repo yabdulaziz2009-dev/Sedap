@@ -7,14 +7,17 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start:server": "node server/index.js"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.15.0",
     "chart": "^0.1.2",
+    "cors": "^2.8.6",
     "daisyui": "^5.5.19",
+    "express": "^4.22.1",
     "i18": "^0.0.6",
     "localforage": "^1.10.0",
     "match-sorter": "^8.2.0",

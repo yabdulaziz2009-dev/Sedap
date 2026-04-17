@@ -10,3 +10,21 @@ Currently, two official plugins are available:
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Backend server
+
+A simple Express backend has been added in `server/index.js` with demo endpoints for analytics, foods, orders, and customers.
+
+To run the backend server:
+
+```bash
+npm run start:server
+```
+
+Then start the frontend:
+
+```bash
+npm run dev
+```
+
+The dashboard frontend now fetches data from `http://localhost:4000/api/analytics` and `http://localhost:4000/api/foods`.
