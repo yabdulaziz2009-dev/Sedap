@@ -1,29 +1,43 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
+import * as React from "react";
+import * as ReactDOM from "react-dom/client";
+import {
+  createBrowserRouter,
+  RouterProvider,
+} from "react-router-dom";
+import { Provider } from "react-redux";
+import "./index.css";
 import App from "./App";
 import Home from "./Pages/Home";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Foods from "./Pages/Foods";
+import FoodDetail from "./Pages/FoodDetail";
+import store from "./store/store";
+
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />,
-    errorElement: <div>404 Not Found</div>,
+    element: <App/>,
     children: [
       {
-        path: "/",
-        element: <Home/>,
+        index: true,
+        element: <Home />,
       },
       {
         path:"/Foods",
         element:<Foods/>
       },
+      {
+        path:"/foods/:id",
+        element:<FoodDetail/>
+      },
     ],
   },
+  
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>
   </React.StrictMode>
 );

@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const API = "https://sedab-backend.onrender.com/api/foods";
+const API  = import.meta.env.VITE_FOOD_API
 
 export const fetchFoods = createAsyncThunk("food/fetchFoods", async () => {
   const res = await axios.get(API);
@@ -14,7 +14,7 @@ export const fetchFoods = createAsyncThunk("food/fetchFoods", async () => {
       category: item.category?.name || "Food",
       subcategory: item.subcategory || "No subcategory",
       description: item.description || "No description",
-      ingredients: item.ingredients || "No ingredients",
+      ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
       nutritionInfo: item.nutritionInfo || "No nutrition info",
       stockAvailable: item.stockAvailable ?? true,
     };
