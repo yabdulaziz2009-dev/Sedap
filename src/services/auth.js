@@ -181,6 +181,21 @@ export const getSession = () => {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export const clearSession = () => {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(ROLE_KEY)
