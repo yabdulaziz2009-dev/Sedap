@@ -1,10 +1,10 @@
 import React from 'react'
-import Calendar from './Calendar'
+import Foods from './Foods'
 
 const Home = () => {
   return (
     <div>
-      <Calendar/>
+      <Foods />
     </div>
   )
 }

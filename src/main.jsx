@@ -4,10 +4,13 @@ import {
   createBrowserRouter,
   RouterProvider,
 } from "react-router-dom";
+import { Provider } from "react-redux";
 import "./index.css";
 import App from "./App";
 import Home from "./Pages/Home";
-import Calendar from "./Pages/Calendar";
+import Foods from "./Pages/Foods";
+import FoodDetail from "./Pages/FoodDetail";
+import store from "./store/store";
 
 const router = createBrowserRouter([
   {
@@ -16,7 +19,15 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Calendar />,
+        element: <Home />,
+      },
+      {
+        path:"/Foods",
+        element:<Foods/>
+      },
+      {
+        path:"/foods/:id",
+        element:<FoodDetail/>
       },
     ],
   },
@@ -25,6 +36,8 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>
   </React.StrictMode>
 );
