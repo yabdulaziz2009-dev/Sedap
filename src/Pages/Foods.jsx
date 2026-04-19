@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchFoods } from "../store/slices/Food";
 import Cards from "../Components/Cards";
+import MenuComparison from "../Components/MenuComparison";
 
 function Foods() {
   const dispatch = useDispatch();
@@ -31,7 +32,9 @@ function Foods() {
   }
 
   return (
-    <div className="flex flex-wrap gap-5 justify-center items-center pt-14">
+    <div className="flex flex-col justify-center items-center">
+
+    <div className="flex flex-wrap  gap-5 justify-center items-center pt-14">
       {foods?.length > 0 ? (
         foods.map((item) => (
           <Cards
@@ -44,6 +47,9 @@ function Foods() {
           Hozircha food mavjud emas
         </p>
       )}
+    </div>
+      <MenuComparison/>
+
     </div>
   );
 }

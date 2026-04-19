@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchFoods } from "../store/slices/Food";
 import Chart from "chart.js/auto";
+import CustomerReviews from "../Components/CustomerReviews";
 
 const ALL_DATA = {
   weekly:  [22000, 35000, 32000, 48000, 83000, 67000, 65000, 60000, 75000],
@@ -96,7 +97,7 @@ function RevenueChart() {
   return (
     <div
       className="bg-white rounded-2xl border border-gray-100 p-5 flex-shrink-0 flex flex-col dark:bg-slate-800 dark:border-slate-700"
-      style={{ width: "500px", height: "700px" }}
+      style={{ width: "600px", height: "800px" }}
     >
       <p className="text-[15px] font-medium text-gray-900 mb-0.5 dark:text-slate-100">Revenue</p>
       <p className="text-[11px] text-gray-400 mb-3 dark:text-slate-500">Lorem ipsum dolor sit amet, consectetur</p>
@@ -150,11 +151,13 @@ function FoodDetail() {
   }
 
   return (
-    <div className="flex gap-4 items-stretch flex-wrap">
+    <div>
+      
+    <div className="flex gap-4 items-center justify-center flex-wrap">
       {/* Food Card */}
       <div
         className="bg-white rounded-2xl border border-dashed border-gray-200 p-5 flex-shrink-0 dark:bg-slate-800 dark:border-slate-600"
-        style={{ width: "500px", height: "700px" }}
+        style={{ width: "600px", height: "800px" }}
       >
         <p className="text-right text-xs text-gray-400 mb-3 dark:text-slate-500">
           Category: {food.category} /{" "}
@@ -206,6 +209,8 @@ function FoodDetail() {
 
       {/* Revenue Chart */}
       <RevenueChart />
+    </div>
+    <CustomerReviews/>
     </div>
   );
 }
