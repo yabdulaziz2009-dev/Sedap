@@ -1,11 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
-import start from './slices/start'
 import food from "./slices/Food";
-const store =configureStore({
-    reducer:{
-        starter:start,
-        food
-    }
+import theme from "./slices/theme";
+
+const store = configureStore({
+    reducer: {
+        food,
+        theme,
+    },
 })
 
 export default store;
