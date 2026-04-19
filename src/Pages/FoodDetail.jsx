@@ -10,7 +10,7 @@ const ALL_DATA = {
   daily:   [12000, 20000, 25000, 42000, 65000, 58000, 55000, 52000, 68000],
 };
 const LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept"];
-
+ 
 function RevenueChart() {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
