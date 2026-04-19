@@ -5,7 +5,10 @@ import Cards from "../Components/Cards";
 
 function Foods() {
   const dispatch = useDispatch();
-  const { foods, loading, error } = useSelector((state) => state.food);
+
+  const { foods, loading, error } = useSelector(
+    (state) => state.food
+  );
 
   useEffect(() => {
     dispatch(fetchFoods());
@@ -29,9 +32,18 @@ function Foods() {
 
   return (
     <div className="flex flex-wrap gap-5 justify-center items-center pt-14">
-      {foods.map((item) => (
-        <Cards key={item.id} food={item} />
-      ))}
+      {foods?.length > 0 ? (
+        foods.map((item) => (
+          <Cards
+            key={item.id}
+            food={item}
+          />
+        ))
+      ) : (
+        <p className="text-slate-500">
+          Hozircha food mavjud emas
+        </p>
+      )}
     </div>
   );
 }

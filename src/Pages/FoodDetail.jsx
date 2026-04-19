@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchFoods } from "../store/slices/Food";
@@ -10,12 +10,11 @@ const ALL_DATA = {
   daily:   [12000, 20000, 25000, 42000, 65000, 58000, 55000, 52000, 68000],
 };
 const LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept"];
- 
+
 function RevenueChart() {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
   const [tab, setTab] = useState("weekly");
-  const { mode } = useSelector((state) => state.theme);
 
   useEffect(() => {
     const ctx = canvasRef.current.getContext("2d");
@@ -48,11 +47,11 @@ function RevenueChart() {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: mode === "dark" ? "#1e293b" : "#fff",
-            borderColor: mode === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+            backgroundColor: "#fff",
+            borderColor: "rgba(0,0,0,0.1)",
             borderWidth: 1,
-            titleColor: mode === "dark" ? "#f1f5f9" : "#111",
-            bodyColor: mode === "dark" ? "#94a3b8" : "#6b7280",
+            titleColor: "#111",
+            bodyColor: "#6b7280",
             padding: 10,
             titleFont: { size: 13, weight: "500" },
             callbacks: {
@@ -65,15 +64,15 @@ function RevenueChart() {
           x: {
             grid: { display: false },
             border: { display: false },
-            ticks: { color: mode === "dark" ? "#64748b" : "#9ca3af", font: { size: 11 }, autoSkip: false },
+            ticks: { color: "#9ca3af", font: { size: 11 }, autoSkip: false },
           },
           y: {
             min: 10000,
             max: 100000,
-            grid: { color: mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", drawTicks: false },
+            grid: { color: "rgba(0,0,0,0.05)", drawTicks: false },
             border: { display: false },
             ticks: {
-              color: mode === "dark" ? "#64748b" : "#9ca3af",
+              color: "#9ca3af",
               font: { size: 11 },
               padding: 8,
               stepSize: 10000,
@@ -84,10 +83,8 @@ function RevenueChart() {
       },
     });
 
-    return () => {
-      chartRef.current?.destroy();
-    };
-  }, [mode]);
+    return () => chartRef.current?.destroy();
+  }, []);
 
   useEffect(() => {
     if (chartRef.current) {
@@ -97,7 +94,10 @@ function RevenueChart() {
   }, [tab]);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 w-[340px] flex-shrink-0 dark:bg-slate-800 dark:border-slate-700">
+    <div
+      className="bg-white rounded-2xl border border-gray-100 p-5 flex-shrink-0 flex flex-col dark:bg-slate-800 dark:border-slate-700"
+      style={{ width: "500px", height: "700px" }}
+    >
       <p className="text-[15px] font-medium text-gray-900 mb-0.5 dark:text-slate-100">Revenue</p>
       <p className="text-[11px] text-gray-400 mb-3 dark:text-slate-500">Lorem ipsum dolor sit amet, consectetur</p>
 
@@ -117,7 +117,7 @@ function RevenueChart() {
         ))}
       </div>
 
-      <div className="relative w-full h-[230px]">
+      <div className="relative w-full flex-1 min-h-0">
         <canvas ref={canvasRef} />
       </div>
     </div>
@@ -150,9 +150,12 @@ function FoodDetail() {
   }
 
   return (
-    <div className="flex gap-4 items-start flex-wrap">
+    <div className="flex gap-4 items-stretch flex-wrap">
       {/* Food Card */}
-      <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-5 w-[340px] flex-shrink-0 dark:bg-slate-800 dark:border-slate-600">
+      <div
+        className="bg-white rounded-2xl border border-dashed border-gray-200 p-5 flex-shrink-0 dark:bg-slate-800 dark:border-slate-600"
+        style={{ width: "500px", height: "700px" }}
+      >
         <p className="text-right text-xs text-gray-400 mb-3 dark:text-slate-500">
           Category: {food.category} /{" "}
           <span className="text-green-700 font-medium dark:text-green-400">{food.subcategory}</span>
@@ -164,31 +167,19 @@ function FoodDetail() {
             alt={food.name}
             className="w-[110px] h-[85px] object-cover rounded-xl flex-shrink-0"
           />
-
           <div className="flex-1">
             <div className="flex items-center gap-1 mb-1">
-              <span
-                className={`w-2 h-2 rounded-full inline-block ${
-                  food.stockAvailable ? "bg-green-700" : "bg-red-500"
-                }`}
-              />
-              <span
-                className={`text-xs font-medium ${
-                  food.stockAvailable ? "text-green-700 dark:text-green-400" : "text-red-500"
-                }`}
-              >
+              <span className={`w-2 h-2 rounded-full inline-block ${food.stockAvailable ? "bg-green-700" : "bg-red-500"}`} />
+              <span className={`text-xs font-medium ${food.stockAvailable ? "text-green-700 dark:text-green-400" : "text-red-500"}`}>
                 {food.stockAvailable ? "Stock Available" : "Out of Stock"}
               </span>
             </div>
-
             <h2 className="text-sm font-medium text-gray-900 leading-snug mb-1 dark:text-slate-100">
               {food.name}
             </h2>
-
             <p className="text-xs text-gray-500 leading-relaxed mb-3 dark:text-slate-400">
               {food.description}
             </p>
-
             <div className="flex gap-2">
               <button className="bg-green-700 hover:bg-green-800 text-white text-xs font-medium px-4 py-2 rounded-lg">
                 Add Menu
@@ -203,14 +194,14 @@ function FoodDetail() {
         <hr className="border-dashed border-gray-200 my-3 dark:border-slate-600" />
         <h3 className="text-xs font-medium text-gray-900 mb-1.5 dark:text-slate-200">Ingredients</h3>
         <p className="text-xs text-gray-500 leading-relaxed dark:text-slate-400">
-          {food.ingredients.length > 0
-            ? food.ingredients.join(", ")
-            : "No ingredients"}
+          {food.ingredients.length > 0 ? food.ingredients.join(", ") : "No ingredients"}
         </p>
 
         <hr className="border-dashed border-gray-200 my-3 dark:border-slate-600" />
         <h3 className="text-xs font-medium text-gray-900 mb-1.5 dark:text-slate-200">Nutrition Info</h3>
-        <p className="text-xs text-gray-500 leading-relaxed dark:text-slate-400">{food.nutritionInfo}</p>
+        <p className="text-xs text-gray-500 leading-relaxed dark:text-slate-400">
+          {food.nutritionInfo}
+        </p>
       </div>
 
       {/* Revenue Chart */}
