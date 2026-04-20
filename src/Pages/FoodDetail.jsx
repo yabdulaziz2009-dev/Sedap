@@ -97,7 +97,7 @@ function RevenueChart() {
   return (
     <div
       className="bg-white rounded-2xl border border-gray-100 p-5 flex-shrink-0 flex flex-col dark:bg-slate-800 dark:border-slate-700"
-      style={{ width: "600px", height: "800px" }}
+      style={{ width: "600px", height: "500px" }}
     >
       <p className="text-[15px] font-medium text-gray-900 mb-0.5 dark:text-slate-100">Revenue</p>
       <p className="text-[11px] text-gray-400 mb-3 dark:text-slate-500">Lorem ipsum dolor sit amet, consectetur</p>
@@ -157,7 +157,7 @@ function FoodDetail() {
       {/* Food Card */}
       <div
         className="bg-white rounded-2xl border border-dashed border-gray-200 p-5 flex-shrink-0 dark:bg-slate-800 dark:border-slate-600"
-        style={{ width: "600px", height: "800px" }}
+        style={{ width: "600px", height: "500px" }}
       >
         <p className="text-right text-xs text-gray-400 mb-3 dark:text-slate-500">
           Category: {food.category} /{" "}
