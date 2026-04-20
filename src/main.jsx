@@ -8,6 +8,8 @@ import FoodDetail from './Pages/FoodDetail'
 import './index.css'
 import { Provider } from 'react-redux'
 import store from './store/store'
+import CalendarPage from './Pages/CalendarPage'
+import Xchat from './Pages/Xchat'
 
 const router = createBrowserRouter([
   {
@@ -26,6 +28,14 @@ const router = createBrowserRouter([
         path: 'foods/:id',
         element: <FoodDetail />,
       },
+        {
+        path: '/calendar',
+        element: <CalendarPage />,
+      },
+      {
+        path: '/xchat',
+        element: <Xchat/>
+      }
     ],
   },
 ])

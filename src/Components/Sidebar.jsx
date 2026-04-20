@@ -22,7 +22,7 @@ const navItems = [
   { label: 'Reviews', icon: HiStar, path: '/reviews' },
   { label: 'Foods', icon: HiShoppingCart, path: '/foods' },
   { label: 'Calendar', icon: HiCalendar, path: '/calendar' },
-  { label: 'Chat', icon: HiChatBubbleLeftRight, path: '/chat' },
+  { label: 'Chat', icon: HiChatBubbleLeftRight, path: '/xchat' },
   { label: 'Wallet', icon: HiWallet, path: '/wallet' },
 ]
 
