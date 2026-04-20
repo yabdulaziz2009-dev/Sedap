@@ -1,26 +1,27 @@
-import Sidebar from "./Components/Sidebar";
-import Header from "./Components/Header";
-import { Outlet } from "react-router-dom";
+import React from 'react'
+import { Outlet } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import Header from './Components/Header'
+import Sidebar from './Components/Sidebar'
 
-function App() {
+const App = () => {
+  const { mode } = useSelector((state) => state.theme)
+
   return (
-    <div className="flex bg-[#F8F9FA] p-10">
-      {/* SIDEBAR */}
-      <div className="fixed top-0 left-0 h-screen w-56">
-        <Sidebar />
+    <div className={mode === 'dark' ? 'dark' : ''}>
+      <div className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+        <div className="lg:grid lg:grid-cols-[280px_1fr]">
+          <Sidebar />
+          <div className="min-h-screen">
+            <Header />
+            <main className="p-6 xl:px-12 xl:py-8">
+              <Outlet />
+            </main>
+          </div>
+        </div>
       </div>
-
-      {/* MAIN */}
-      <div className="flex-1 ml-56">
-        <Header />
-      </div>
-
-      <main className="mt-16 p-4">
-        <Outlet />
-        
-      </main>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
