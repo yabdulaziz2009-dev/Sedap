@@ -29,7 +29,7 @@ function Foods() {
 
   return (
     <div className="flex flex-wrap gap-5 justify-center items-center pt-14">
-      {foods.map((item) => (
+      {(foods || []).map((item) => (
         <Cards key={item.id} food={item} />
       ))}
     </div>
