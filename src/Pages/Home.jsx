@@ -1,251 +1,373 @@
-import React, { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { fetchFoods } from '../store/slices/Food'
-import pizzaImage from '../assets/pizza.svg'
-import lagmonImage from '../assets/lagmon.svg'
+import React, { useEffect, useState, useCallback } from 'react'
+import {
+  PieChart, Pie, Cell,
+  LineChart, Line,
+  BarChart, Bar,
+  AreaChart, Area,
+  XAxis, YAxis, Tooltip,
+  ResponsiveContainer, CartesianGrid,
+} from 'recharts';
 
-const mockAnalytics = {
-  revenue: 84320,
-  bestSelling: 'Lagmon',
-  dailyAverage: '1,245',
+const apiurl = import.meta.env.VITE_API_URL;
+
+// ── Donut (halqa) grafik ──────────────────────────────────────────────────────
+// value=foiz (0-100), color=rang, label=nom
+function DonutChart({ value, color, label }) {
+  const safe = Math.min(Math.max(Number(value) || 0, 0), 100);
+  const data = [{ value: safe }, { value: 100 - safe }]; // to'lgan + bo'sh qism
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative w-24 h-24">
+        <PieChart width={96} height={96}>
+          <Pie data={data} cx={44} cy={44} innerRadius={30} outerRadius={44}
+            startAngle={90} endAngle={-270} dataKey="value" strokeWidth={0}>
+            <Cell fill={color} />      {/* to'lgan qism */}
+            <Cell fill="#f1f5f9" />    {/* bo'sh qism */}
+          </Pie>
+        </PieChart>
+        {/* Markazdagi foiz yozuvi */}
+        <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-700">
+          {safe}%
+        </div>
+      </div>
+      <p className="text-xs font-semibold text-slate-600 text-center">{label}</p>
+    </div>
+  );
 }
 
-const Home = () => {
-  const dispatch = useDispatch()
-  const { foods, loading, error } = useSelector((state) => state.food)
+// ── Yuklanish animatsiyasi (skeleton) ─────────────────────────────────────────
+function Skeleton({ className = '' }) {
+  return <div className={`animate-pulse bg-slate-200 rounded-xl ${className}`} />;
+}
 
-  useEffect(() => {
-    if (foods.length === 0) {
-      dispatch(fetchFoods())
-    }
-  }, [dispatch, foods.length])
+// ── Statistika kartasi ────────────────────────────────────────────────────────
+const ICONS  = ['🧾', '💰', '✅', '❌'];
+const COLORS = ['bg-blue-100', 'bg-green-100', 'bg-yellow-100', 'bg-red-100'];
 
-  const analytics = mockAnalytics
-
-  if (loading) {
-    return <div className="text-slate-700 dark:text-slate-300">Yuklanmoqda...</div>
-  }
-
-  if (error) {
-    return <div className="text-red-600">{error}</div>
-  }
+function StatCard({ name, count, index, loading }) {
+  // Yuklanayotganda skeleton ko'rsatamiz
+  if (loading) return (
+    <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-5 w-[23%]">
+      <Skeleton className="w-14 h-14 rounded-full" />
+      <div className="flex-1 space-y-2">
+        <Skeleton className="h-8 w-20" />
+        <Skeleton className="h-4 w-28" />
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      <section className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
+    <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-5 w-[23%] hover:shadow-md transition-shadow">
+      <div className={`${COLORS[index]} w-14 h-14 rounded-full flex items-center justify-center text-2xl`}>
+        {ICONS[index]}
+      </div>
+      <div>
+        {/* Revenue bo'lsa dollar belgisi qo'shamiz */}
+        <p className="text-3xl font-bold text-gray-800">
+          {name === 'Revenue' ? `$${count?.toLocaleString()}` : count?.toLocaleString()}
+        </p>
+        <p className="text-gray-400 text-sm">{name}</p>
+        <p className="text-green-500 text-xs mt-1">↑ 4% (30 days)</p>
+      </div>
+    </div>
+  );
+}
 
-        {/* Analytics card */}
-        <div className="rounded-[2rem] bg-white p-6 shadow-sm shadow-slate-200 dark:bg-slate-800 dark:shadow-slate-900">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Analytics</h1>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Here is your restaurant summary with graph view</p>
-            </div>
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300">
-              Monthly
+// ── Asosiy komponent ──────────────────────────────────────────────────────────
+const Home = () => {
+  // Har bir bo'lim uchun data va loading holati
+  const [stats,        setStats]        = useState([]);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [pieData,      setPieData]      = useState([]);
+  const [pieLoading,   setPieLoading]   = useState(true);
+  const [orderData,    setOrderData]    = useState([]);
+  const [orderLoading, setOrderLoading] = useState(true);
+  const [revenueData,  setRevenueData]  = useState([]);
+  const [revLoading,   setRevLoading]   = useState(true);
+  const [customerData, setCustomerData] = useState([]);
+  const [custLoading,  setCustLoading]  = useState(true);
+  const [reviews,      setReviews]      = useState([]);
+  const [revLoading2,  setRevLoading2]  = useState(true);
+
+  // useCallback — funksiya har render da qayta yaratilmasligi uchun
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      const res  = await fetch(`${apiurl}/Dashboard`);
+      const json = await res.json();
+      const d    = json.data ?? json; // json.data bo'lmasa json o'zi olinadi
+      setStats([
+        { id: 1, name: 'Total Orders', count: Number(d.totalOrders)     || 0 },
+        { id: 2, name: 'Revenue',      count: Number(d.totalRevenue)    || 0 },
+        { id: 3, name: 'Ready',        count: Number(d.readyOrders)     || 0 },
+        { id: 4, name: 'Cancelled',    count: Number(d.cancelledOrders) || 0 },
+      ]);
+    } catch (e) { console.error(e); }
+    finally     { setStatsLoading(false); }
+  }, []);
+
+  const fetchPie = useCallback(async () => {
+    setPieLoading(true);
+    try {
+      const res  = await fetch(`${apiurl}/Dashboard/PieChart`);
+      const json = await res.json();
+      const d    = json.data ?? json;
+      setPieData([
+        { name: 'Total Order',     value: Number(d.totalOrderPercent)     || 0, color: '#ef4444' },
+        { name: 'Customer Growth', value: Number(d.customerGrowthPercent) || 0, color: '#10b981' },
+        { name: 'Total Revenue',   value: Number(d.totalRevenuePercent)   || 0, color: '#3b82f6' },
+      ]);
+    } catch (e) { console.error(e); }
+    finally     { setPieLoading(false); }
+  }, []);
+
+  // Quyidagi fetch lar ham xuddi shunday ishlaydi — API → json → state
+  const fetchOrderChart = useCallback(async () => {
+    setOrderLoading(true);
+    try {
+      const res  = await fetch(`${apiurl}/Dashboard/OrderChart`);
+      const json = await res.json();
+      const raw  = json.data ?? json;
+      setOrderData(Array.isArray(raw) ? raw : []); // array bo'lmasa bo'sh array
+    } catch (e) { console.error(e); }
+    finally     { setOrderLoading(false); }
+  }, []);
+
+  const fetchRevenue = useCallback(async () => {
+    setRevLoading(true);
+    try {
+      const res  = await fetch(`${apiurl}/Dashboard/RevenueChart`);
+      const json = await res.json();
+      const raw  = json.data ?? json;
+      setRevenueData(Array.isArray(raw) ? raw : []);
+    } catch (e) { console.error(e); }
+    finally     { setRevLoading(false); }
+  }, []);
+
+  const fetchCustomer = useCallback(async () => {
+    setCustLoading(true);
+    try {
+      const res  = await fetch(`${apiurl}/Dashboard/CustomerMap`);
+      const json = await res.json();
+      const raw  = json.data ?? json;
+      setCustomerData(Array.isArray(raw) ? raw : []);
+    } catch (e) { console.error(e); }
+    finally     { setCustLoading(false); }
+  }, []);
+
+  const fetchReviews = useCallback(async () => {
+    setRevLoading2(true);
+    try {
+      const res  = await fetch(`${apiurl}/Dashboard/CustomerReviews`);
+      const json = await res.json();
+      const raw  = json.data ?? json;
+      setReviews(Array.isArray(raw) ? raw : []);
+    } catch (e) { console.error(e); }
+    finally     { setRevLoading2(false); }
+  }, []);
+
+  // Komponent birinchi yuklanganda barcha fetch lar chaqiriladi
+  useEffect(() => {
+    fetchStats();
+    fetchPie();
+    fetchOrderChart();
+    fetchRevenue();
+    fetchCustomer();
+    fetchReviews();
+  }, []);
+
+  return (
+    <div className="bg-slate-100 min-h-screen">
+
+      {/* ── Header ── */}
+      <div className="w-full flex items-center justify-between px-6 py-5">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+          <p className="text-sm text-slate-400 mt-1">Hi, Samantha. Welcome back to Sedap Admin!</p>
+        </div>
+        <div className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-100 cursor-pointer hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-center w-10 h-10 bg-sky-50 rounded-xl">
+            <svg className="w-5 h-5 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" strokeWidth="2"/>
+              <line x1="16" y1="2" x2="16" y2="6" strokeLinecap="round"/>
+              <line x1="8"  y1="2" x2="8"  y2="6" strokeLinecap="round"/>
+              <line x1="3"  y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-700">Filter Periode</p>
+            <p className="text-xs text-slate-400">17 April 2020 – 21 May 2020</p>
+          </div>
+          <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+      </div>
+
+      {/* ── Stat kartalar ── */}
+      <div className="flex justify-between mt-5 px-6 gap-4">
+        {statsLoading
+          ? Array(4).fill(0).map((_, i) => <StatCard key={i} index={i} loading />)
+          : stats.map((item, i) => <StatCard key={item.id} {...item} index={i} loading={false} />)
+        }
+      </div>
+
+      {/* ── Grafiklar (2x2 grid) ── */}
+      <div className="px-6 mt-6 grid grid-cols-2 gap-4">
+
+        {/* 1. Pie Chart */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-slate-800">Pie Chart</h2>
+            <div className="flex gap-3 text-xs text-slate-500">
+              <label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" readOnly /> Chart</label>
+              <label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" defaultChecked className="accent-red-500" readOnly /> Show Value</label>
             </div>
           </div>
+          {pieLoading
+            ? <div className="flex justify-around">{[0,1,2].map(i => <Skeleton key={i} className="w-24 h-24 rounded-full" />)}</div>
+            : <div className="flex justify-around">{pieData.map((d, i) => <DonutChart key={i} {...d} />)}</div>
+          }
+        </div>
 
-          <div className="mt-6 rounded-[2rem] bg-slate-950 p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-400">Chart Orders</p>
-                <p className="mt-2 text-3xl font-semibold">257k</p>
-                <p className="mt-1 text-sm text-slate-400">Average 1,245 orders per day</p>
-              </div>
-              <div className="rounded-3xl bg-slate-800 px-4 py-2 text-sm">Daily</div>
+        {/* 2. Chart Order — Area grafik */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-1">
+            <div>
+              <h2 className="text-base font-bold text-slate-800">Chart Order</h2>
+              <p className="text-xs text-slate-400">Lorem ipsum dolor sit amet</p>
             </div>
-            <div className="mt-6 rounded-[2rem] bg-slate-900 p-4">
-              <svg viewBox="0 0 360 180" className="w-full">
+            <button className="border border-blue-500 text-blue-500 text-xs px-3 py-1.5 rounded-full hover:bg-blue-50 transition">
+              ↓ Save Report
+            </button>
+          </div>
+          {orderLoading ? <Skeleton className="h-40 w-full mt-2" /> : (
+            <ResponsiveContainer width="100%" height={160}>
+              <AreaChart data={orderData}>
                 <defs>
-                  <linearGradient id="chartGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#14b8a6" />
-                    <stop offset="100%" stopColor="#38bdf8" />
+                  <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <path d="M34 150 L34 30 L338 30" stroke="#334155" strokeWidth="2" />
-                <path d="M34 150 L338 150" stroke="#334155" strokeWidth="2" />
-                <path d="M34 118 C80 110 120 100 160 88 C200 76 260 84 298 60" fill="none" stroke="url(#chartGradient)" strokeWidth="5" strokeLinecap="round" />
-                <circle cx="34" cy="150" r="4" fill="#0ea5e9" />
-                <circle cx="80" cy="110" r="6" fill="#0ea5e9" />
-                <circle cx="120" cy="100" r="6" fill="#0ea5e9" />
-                <circle cx="160" cy="88" r="6" fill="#0ea5e9" />
-                <circle cx="200" cy="76" r="6" fill="#0ea5e9" />
-                <circle cx="260" cy="84" r="6" fill="#0ea5e9" />
-                <circle cx="298" cy="60" r="6" fill="#0ea5e9" />
-                <text x="32" y="170" className="fill-slate-400 text-xs">Jan</text>
-                <text x="76" y="170" className="fill-slate-400 text-xs">Feb</text>
-                <text x="116" y="170" className="fill-slate-400 text-xs">Mar</text>
-                <text x="156" y="170" className="fill-slate-400 text-xs">Apr</text>
-                <text x="196" y="170" className="fill-slate-400 text-xs">May</text>
-                <text x="252" y="170" className="fill-slate-400 text-xs">Jun</text>
-                <text x="294" y="170" className="fill-slate-400 text-xs">Jul</text>
-                <text x="10" y="40" className="fill-slate-500 text-xs">800</text>
-                <text x="10" y="80" className="fill-slate-500 text-xs">600</text>
-                <text x="10" y="120" className="fill-slate-500 text-xs">400</text>
-                <text x="10" y="160" className="fill-slate-500 text-xs">200</text>
-              </svg>
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}/>
+                <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }}/>
+                <Area type="monotone" dataKey="orders" stroke="#3b82f6" fill="url(#grad)" strokeWidth={2} dot={false}/>
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* 3. Total Revenue — Line grafik */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-slate-800">Total Revenue</h2>
+            <div className="flex gap-3 text-xs text-slate-500">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/> 2020</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block"/> 2021</span>
             </div>
           </div>
+          {revLoading ? <Skeleton className="h-52 w-full" /> : (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={revenueData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}
+                  tickFormatter={v => `$${(v/1000).toFixed(0)}0k`}/>
+                <Tooltip formatter={v => `$${Number(v).toLocaleString()}`} contentStyle={{ borderRadius: 8, fontSize: 12 }}/>
+                <Line type="monotone" dataKey="y2020" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: '#3b82f6' }}/>
+                <Line type="monotone" dataKey="y2021" stroke="#f87171" strokeWidth={2} dot={{ r: 3, fill: '#f87171' }}/>
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: 'Orders', value: '257k' },
-              { label: 'Revenue', value: `$${analytics.revenue.toLocaleString()}` },
-              { label: 'Best Selling', value: analytics.bestSelling },
-              { label: 'Daily Average', value: analytics.dailyAverage },
-            ].map(({ label, value }) => (
-              <div key={label} className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-600 dark:bg-slate-700">
-                <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
-                <p className="mt-3 text-2xl font-semibold text-slate-900 dark:text-slate-100">{value}</p>
+        {/* 4. Customer Map — Bar grafik */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold text-slate-800">Customer Map</h2>
+            <button className="border border-slate-200 text-xs px-3 py-1 rounded-lg">Weekly ▼</button>
+          </div>
+          {custLoading ? <Skeleton className="h-52 w-full" /> : (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={customerData} barCategoryGap="30%">
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}/>
+                <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }}/>
+                <Bar dataKey="red"    fill="#f87171" radius={[4,4,0,0]}/>
+                <Bar dataKey="yellow" fill="#facc15" radius={[4,4,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+      </div>
+
+      {/* ── Customer Reviews ── */}
+      <div className="px-6 mt-6 pb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-800">Customer Review</h2>
+            <p className="text-xs text-slate-400">Eum fuga consequatur aliquip sit</p>
+          </div>
+          <div className="flex gap-2">
+            <button className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50">‹</button>
+            <button className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50">›</button>
+          </div>
+        </div>
+
+        {revLoading2 ? (
+          // Yuklanayotganda 3 ta skeleton karta
+          <div className="grid grid-cols-3 gap-4">
+            {[0,1,2].map(i => (
+              <div key={i} className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="w-10 h-10 rounded-full" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-4 w-20" />
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="space-y-6">
-          {/* Most Selling Items */}
-          <div className="rounded-[2rem] bg-white p-6 shadow-sm shadow-slate-200 dark:bg-slate-800 dark:shadow-slate-900">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Most Selling Items</h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Learn top food items and conversions</p>
-              </div>
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                Daily
-              </div>
-            </div>
-            <div className="mt-5 space-y-4">
-              {foods.slice(0, 4).map((food) => (
-                <div key={food.id} className="flex items-center justify-between rounded-3xl border border-slate-200 p-4 dark:border-slate-700">
-                  <div className="flex items-center gap-4">
-                    <div className="h-16 w-16 rounded-3xl bg-slate-100 overflow-hidden dark:bg-slate-700">
-                      {food.image && (
-                        <img src={food.image} alt={food.name} className="h-full w-full object-cover" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">{food.name}</p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">{food.category}</p>
-                    </div>
+        ) : reviews.length === 0 ? (
+          <p className="text-slate-400 text-sm text-center py-8">No reviews yet</p>
+        ) : (
+          // Review kartalar — max 3 ta ko'rsatiladi
+          <div className="grid grid-cols-3 gap-4">
+            {reviews.slice(0, 3).map((r, i) => (
+              <div key={i} className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3 mb-3">
+                  {/* Rasm bo'lsa ko'rsatamiz, bo'lmasa ismning bosh harfi */}
+                  {r.image
+                    ? <img src={r.image} alt={r.name} className="w-10 h-10 rounded-full object-cover" />
+                    : <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500">{(r.name ?? '?')[0]}</div>
+                  }
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">{r.name}</p>
+                    <p className="text-xs text-slate-400">{r.date}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">${food.price?.toFixed(2)}</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Top selling</p>
-                  </div>
+                  {r.foodImage && <img src={r.foodImage} alt="food" className="ml-auto w-12 h-12 rounded-xl object-cover" />}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Revenue */}
-          <div className="rounded-[2rem] bg-white p-6 shadow-sm shadow-slate-200 dark:bg-slate-800 dark:shadow-slate-900">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Revenue</h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Overview of revenue growth</p>
-              </div>
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                Monthly
-              </div>
-            </div>
-            <div className="mt-6 space-y-4">
-              <div className="h-44 rounded-[2rem] bg-gradient-to-r from-indigo-500 via-sky-500 to-cyan-400" />
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-3xl bg-slate-50 p-4 dark:bg-slate-700">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Total Revenue</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">${analytics.revenue.toLocaleString()}</p>
-                </div>
-                <div className="rounded-3xl bg-slate-50 p-4 dark:bg-slate-700">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Order Growth</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">+18%</p>
+                <p className="text-xs text-slate-500 leading-relaxed line-clamp-4">{r.text ?? r.comment}</p>
+                {/* Yulduzcha reytingi */}
+                <div className="flex items-center gap-1 mt-3">
+                  {Array(5).fill(0).map((_, s) => (
+                    <span key={s} className={`text-sm ${s < Math.round(r.rating) ? 'text-yellow-400' : 'text-slate-200'}`}>★</span>
+                  ))}
+                  <span className="text-xs text-slate-500 ml-1">{Number(r.rating).toFixed(1)}</span>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
-        </div>
-      </section>
+        )}
+      </div>
 
-      {/* Most Favourite Items */}
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm shadow-slate-200 dark:bg-slate-800 dark:shadow-slate-900">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Most Favourite Items</h2>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Based on customer picks and ratings</p>
-          </div>
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300">
-            Weekly
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-4 xl:grid-cols-[1.5fr_1fr]">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-[2rem] border border-slate-200 p-4 shadow-sm dark:border-slate-700">
-              <img src={pizzaImage} alt="Pizza" className="h-40 w-full rounded-3xl object-cover" />
-              <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">Pizza Meal for Kids</h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Tomato, cheese, and spicy toppings</p>
-              <div className="mt-4 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-                <span>4.8 ★</span>
-                <span>$5.67</span>
-              </div>
-            </div>
-            <div className="rounded-[2rem] border border-slate-200 p-4 shadow-sm dark:border-slate-700">
-              <img src={lagmonImage} alt="Lagmon" className="h-40 w-full rounded-3xl object-cover" />
-              <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">Lagmon Special</h3>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Noodle bowl with rich sauce and veggies</p>
-              <div className="mt-4 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-                <span>4.9 ★</span>
-                <span>$8.75</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-700 dark:bg-slate-700">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Food Trend Diagram</h3>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Pizza and lagmon interest over the week</p>
-              </div>
-              <div className="rounded-3xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 dark:border-slate-600 dark:bg-slate-600 dark:text-slate-300">
-                7 Days
-              </div>
-            </div>
-            <div className="mt-6">
-              <svg viewBox="0 0 320 180" className="w-full">
-                <defs>
-                  <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#38bdf8" />
-                    <stop offset="100%" stopColor="#22c55e" />
-                  </linearGradient>
-                </defs>
-                <path d="M24 140 Q 80 110 120 120 T 200 90 T 296 56" fill="none" stroke="url(#lineGradient)" strokeWidth="5" strokeLinecap="round" />
-                <circle cx="24" cy="140" r="5" fill="#38bdf8" />
-                <circle cx="80" cy="110" r="6" fill="#38bdf8" />
-                <circle cx="120" cy="120" r="6" fill="#38bdf8" />
-                <circle cx="200" cy="90" r="6" fill="#38bdf8" />
-                <circle cx="296" cy="56" r="6" fill="#38bdf8" />
-                <text x="24" y="160" className="fill-slate-400 text-xs">Mon</text>
-                <text x="78" y="160" className="fill-slate-400 text-xs">Tue</text>
-                <text x="118" y="160" className="fill-slate-400 text-xs">Wed</text>
-                <text x="198" y="160" className="fill-slate-400 text-xs">Thu</text>
-                <text x="286" y="160" className="fill-slate-400 text-xs">Fri</text>
-              </svg>
-            </div>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-3xl bg-white p-4 text-sm text-slate-600 dark:bg-slate-600 dark:text-slate-300">
-                <div className="font-semibold text-slate-900 dark:text-slate-100">Best Pizza</div>
-                <div className="mt-2">Pizza interest up 18%</div>
-              </div>
-              <div className="rounded-3xl bg-white p-4 text-sm text-slate-600 dark:bg-slate-600 dark:text-slate-300">
-                <div className="font-semibold text-slate-900 dark:text-slate-100">Best Lagmon</div>
-                <div className="mt-2">Lagmon orders grew 22%</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;
