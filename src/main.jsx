@@ -9,7 +9,8 @@ import './index.css'
 import { Provider } from 'react-redux'
 import store from './store/store'
 import CalendarPage from './Pages/CalendarPage'
-import Sraytin from "./Components/Sraytin";
+import Xchat from './Pages/Xchat'
+import Customer from './Pages/Customer'
 
 const router = createBrowserRouter([
   {
@@ -32,10 +33,26 @@ const router = createBrowserRouter([
         path: '/calendar',
         element: <CalendarPage />,
       },
-         {
-        path: '/customers',
-        element: <Sraytin />,
+      {
+        path: 'foods',
+        element: <Foods />,
       },
+      {
+        path: 'foods/:id',
+        element: <FoodDetail />,
+      },
+        {
+        path: '/calendar',
+        element: <CalendarPage />,
+      },
+      {
+        path: '/xchat',
+        element: <Xchat/>
+      },
+        {
+        path: '/customers',
+        element: <Customer/>
+      }
     ],
   },
 ])
