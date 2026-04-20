@@ -1,25 +1,43 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const API = `${import.meta.env.VITE_API_URL}/food`
+const API = import.meta.env.VITE_FOOD_API;
 
-export const fetchFoods = createAsyncThunk("food/fetchFood", async () => {
-  const res = await axios.get(API);
-  const foods = res.data.data;
+export const fetchFoods = createAsyncThunk(
+  "food/fetchFood",
+  async (_, { rejectWithValue }) => {
+    try {
+      console.log("API:", API);
 
-  return foods.map((item) => {
-    return {
-      ...item,
-      id: item._id,
-      category: item.category?.name || "Food",
-      subcategory: item.subcategory || "No subcategory",
-      description: item.description || "No description",
-      ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
-      nutritionInfo: item.nutritionInfo || "No nutrition info",
-      stockAvailable: item.stockAvailable ?? true,
-    };
-  });
-});
+      const res = await axios.get(API);
+
+      console.log("API response:", res.data);
+
+      const foods = res.data?.data || [];
+
+      return foods.map((item) => ({
+        ...item,
+        id: item._id,
+        category: item.category?.name || "Food",
+        subcategory: item.subcategory || "No subcategory",
+        description: item.description || "No description",
+        ingredients: Array.isArray(item.ingredients)
+          ? item.ingredients
+          : [],
+        nutritionInfo: item.nutritionInfo || "No nutrition info",
+        stockAvailable: item.stockAvailable ?? true,
+      }));
+    } catch (err) {
+      console.error("Fetch error:", err);
+
+      return rejectWithValue(
+        err.response?.data?.message ||
+          err.message ||
+          "Server xatolik"
+      );
+    }
+  }
+);
 
 const foodSlice = createSlice({
   name: "food",
@@ -42,12 +60,15 @@ const foodSlice = createSlice({
 
       .addCase(fetchFoods.fulfilled, (state, action) => {
         state.loading = false;
-        state.foods = action.payload;
+        state.foods = action.payload || [];
       })
 
       .addCase(fetchFoods.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Xatolik yuz berdi";
+        state.error =
+          action.payload ||
+          action.error.message ||
+          "Xatolik yuz berdi";
       });
   },
 });
