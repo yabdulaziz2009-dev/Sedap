@@ -3,6 +3,9 @@ import { FaEye } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 const Cards = ({ food }) => {
+  
+
+
   return (
     <Link to={`/foods/${food.id}`}>
           <div className='py-4'>
