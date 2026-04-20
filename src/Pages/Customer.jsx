@@ -27,9 +27,9 @@ const datasets = {
   ],
   daily: [
     { label: "Spaghetti", data: [18, 12, 22, 10, 8,  14, 6],  backgroundColor: "#62b8e8", borderRadius: 5, borderSkipped: false },
-    { label: "Pizza",     data: [8,  7,  10, 5,  4,  8,  3],  backgroundColor: "#e87272", borderRadius: 5, borderSkipped: false },
+    { label: "Pizza",     data: [8,  7,  10, 5,    { label: "Sprite",    data: [11, 16, 13, 22, 12, 17, 9],  backgroundColor: "#f5c542", borderRadius: 5, borderSkipped: false },
+  4,  8,  3],  backgroundColor: "#e87272", borderRadius: 5, borderSkipped: false },
     { label: "Burger",    data: [5,  8,  6,  12, 14, 10, 28], backgroundColor: "#4caf82", borderRadius: 5, borderSkipped: false },
-    { label: "Sprite",    data: [11, 16, 13, 22, 12, 17, 9],  backgroundColor: "#f5c542", borderRadius: 5, borderSkipped: false },
   ],
 };
 
