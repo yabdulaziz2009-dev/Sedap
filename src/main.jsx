@@ -3,11 +3,11 @@ import * as ReactDOM from "react-dom/client";
 import {
   createBrowserRouter,
   RouterProvider,
+  Navigate
 } from "react-router-dom";
 import "./index.css";
 import App from "./App";
-import Home from "./Pages/Home";
-import Calendar from "./Pages/Calendar";
+import GeneralCustomer from "./Pages/GeneralCustomer";
 
 const router = createBrowserRouter([
   {
@@ -16,11 +16,14 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Calendar />,
+        element: <Navigate to="/customers" replace />
       },
+      {
+         path: "customers",
+         element: <GeneralCustomer />
+      }
     ],
   },
-  
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
