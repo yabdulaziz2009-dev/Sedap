@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App'
 import Home from './Pages/Home'
 import Foods from './Pages/Foods'
@@ -9,11 +9,54 @@ import './index.css'
 import { Provider } from 'react-redux'
 import store from './store/store'
 import CalendarPage from './Pages/CalendarPage'
+import Login from './Pages/Login'
+import Registr from './Pages/Registr'
+import { getSession } from './auth'
+
+const ProtectedRoute = ({ children }) => {
+  const session = getSession()
+
+  if (!session) {
+    return <Navigate to="/login" replace />
+  }
+
+  return children
+}
+
+const PublicOnlyRoute = ({ children }) => {
+  const session = getSession()
+
+  if (session) {
+    return <Navigate to="/" replace />
+  }
+
+  return children
+}
 
 const router = createBrowserRouter([
   {
+    path: '/register',
+    element: (
+      <PublicOnlyRoute>
+        <Registr />
+      </PublicOnlyRoute>
+    ),
+  },
+  {
+    path: '/login',
+    element: (
+      <PublicOnlyRoute>
+        <Login />
+      </PublicOnlyRoute>
+    ),
+  },
+  {
     path: '/',
-    element: <App />,
+    element: (
+      <ProtectedRoute>
+        <App />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
@@ -27,11 +70,15 @@ const router = createBrowserRouter([
         path: 'foods/:id',
         element: <FoodDetail />,
       },
-        {
-        path: '/calendar',
+      {
+        path: 'calendar',
         element: <CalendarPage />,
       },
     ],
+  },
+  {
+    path: '*',
+    element: <Navigate to="/login" replace />,
   },
 ])
 
