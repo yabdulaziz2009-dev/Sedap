@@ -10,7 +10,7 @@ import { Provider } from 'react-redux'
 import store from './store/store'
 import CalendarPage from './Pages/CalendarPage'
 import Xchat from './Pages/Xchat'
-import Customer from './Pages/Customer'
+import GeneralCustomer from './Pages/GeneralCustomer'
 import Orders from './Pages/Orders'
 import OrderDetail from './Pages/OrderDetail'
 import Analytics from './Pages/Analytics'
@@ -87,7 +87,7 @@ const router = createBrowserRouter([
       },
       {
         path: 'customers',
-        element: <Customer />,
+        element: <GeneralCustomer />,
       },
       {
         path: 'orders',
