@@ -18,25 +18,18 @@ import Reviews from './Pages/Reviews'
 import Wallet from './Pages/Wallet'
 import Login from './Pages/Login'
 import Registr from './Pages/Registr'
+import Admin from './Pages/Admin'
 import { getSession } from './auth'
 
 const ProtectedRoute = ({ children }) => {
   const session = getSession()
-
-  if (!session) {
-    return <Navigate to="/login" replace />
-  }
-
+  if (!session) return <Navigate to="/login" replace />
   return children
 }
 
 const PublicOnlyRoute = ({ children }) => {
   const session = getSession()
-
-  if (session) {
-    return <Navigate to="/" replace />
-  }
-
+  if (session) return <Navigate to="/" replace />
   return children
 }
 
@@ -57,6 +50,15 @@ const router = createBrowserRouter([
       </PublicOnlyRoute>
     ),
   },
+
+  {
+    path: '/admin',
+    element: (
+      <PublicOnlyRoute>
+        <Admin />
+      </PublicOnlyRoute>
+    ),
+  },
   {
     path: '/',
     element: (
@@ -65,52 +67,20 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      {
-        index: true,
-        element: <Home />,
-      },
-      {
-        path: 'foods',
-        element: <Foods />,
-      },
-      {
-        path: 'foods/:id',
-        element: <FoodDetail />,
-      },
-      {
-        path: 'calendar',
-        element: <CalendarPage />,
-      },
-      {
-        path: 'xchat',
-        element: <Xchat />,
-      },
-      {
-        path: 'customers',
-        element: <GeneralCustomer />,
-      },
-      {
-        path: 'orders',
-        element: <Orders />,
-      },
-      {
-        path: 'orders/detail',
-        element: <OrderDetail />,
-      },
-      {
-        path: 'analytics',
-        element: <Analytics />,
-      },
-      {
-        path: 'reviews',
-        element: <Reviews />,
-      },
-      {
-        path: 'wallet',
-        element: <Wallet />,
-      },
+      { index: true,              element: <Home /> },
+      { path: 'foods',            element: <Foods /> },
+      { path: 'foods/:id',        element: <FoodDetail /> },
+      { path: 'calendar',         element: <CalendarPage /> },
+      { path: 'xchat',            element: <Xchat /> },
+      { path: 'customers',        element: <GeneralCustomer /> },
+      { path: 'orders',           element: <Orders /> },
+      { path: 'orders/detail',    element: <OrderDetail /> },
+      { path: 'analytics',        element: <Analytics /> },
+      { path: 'reviews',          element: <Reviews /> },
+      { path: 'wallet',           element: <Wallet /> },
     ],
   },
+
   {
     path: '*',
     element: <Navigate to="/login" replace />,

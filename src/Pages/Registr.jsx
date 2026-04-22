@@ -297,6 +297,12 @@ const Registr = () => {
                     Tizimga kirish
                   </Link>
                 </p>
+                <p className="mt-3 text-center text-[16px] text-[#6f7681] sm:text-[17px]">
+                  Admin panelga o&apos;tish?{' '}
+                  <Link to="/admin" className="font-semibold text-[#0d6fbd] transition hover:text-[#0a5797]">
+                    Admin panel
+                  </Link>
+                </p>
 
                 <div className="mt-7 flex items-center gap-4 text-[#b8afa9]">
                   <span className="h-px flex-1 bg-[#e8dfd8]" />
