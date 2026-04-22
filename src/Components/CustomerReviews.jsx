@@ -1,9 +1,9 @@
+// CustomerReviews.jsx — to'liq
+
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchReviews } from "../store/slices/Reviews";
-import axios from "axios";
+import { fetchReviews, addReview } from "../store/slices/Reviews";
 
-const REVIEWS_API = "https://sedab-backend.onrender.com/api/reviews";
 const VISIBLE = 3;
 
 /* ─── Stars display ─── */
@@ -25,7 +25,7 @@ function Stars({ rating }) {
   );
 }
 
-/* ─── Star picker (modal ichida) ─── */
+/* ─── Star picker ─── */
 function StarPicker({ value, onChange }) {
   const [hovered, setHovered] = useState(0);
   return (
@@ -34,7 +34,8 @@ function StarPicker({ value, onChange }) {
         const filled = (hovered || value) >= s;
         return (
           <svg key={s}
-            width="32" height="32" viewBox="0 0 24 24" className="cursor-pointer transition-transform hover:scale-110"
+            width="32" height="32" viewBox="0 0 24 24"
+            className="cursor-pointer transition-transform hover:scale-110"
             fill={filled ? "#facc15" : "#e5e7eb"}
             stroke={filled ? "#facc15" : "#e5e7eb"}
             strokeWidth="1"
@@ -81,7 +82,7 @@ function timeAgo(dateStr) {
   return `${Math.floor(days / 7)} week${Math.floor(days / 7) > 1 ? "s" : ""} ago`;
 }
 
-/* ─── Skeleton card ─── */
+/* ─── Skeleton ─── */
 function SkeletonCard() {
   return (
     <div className="bg-white rounded-2xl p-4 border border-gray-50 flex flex-col gap-3 animate-pulse dark:bg-slate-800">
@@ -98,13 +99,13 @@ function SkeletonCard() {
   );
 }
 
-/* ─── Review card ─── */
+/* ─── Review Card ─── */
 function ReviewCard({ review }) {
-  const name = review.userName || review.user?.name || "Anonymous";
+  const name    = review.userName || review.user?.name || "Anonymous";
   const userImg = review.userImage || review.user?.image || "";
   const foodImg = review.food?.image || review.foodImage || "";
   const comment = review.comment || review.text || "No comment";
-  const time = timeAgo(review.createdAt) || review.time || "";
+  const time    = timeAgo(review.createdAt) || review.time || "";
 
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-50 hover:shadow-md transition-shadow flex flex-col gap-3 dark:bg-slate-800 dark:border-slate-700">
@@ -115,8 +116,10 @@ function ReviewCard({ review }) {
           <p className="text-[10px] text-gray-400">{time}</p>
         </div>
         {foodImg ? (
-          <img src={foodImg} alt="food" className="w-11 h-11 rounded-xl object-cover flex-shrink-0"
-            onError={(e) => { e.target.style.display = "none"; }} />
+          <img src={foodImg} alt="food"
+            className="w-11 h-11 rounded-xl object-cover flex-shrink-0"
+            onError={(e) => { e.target.style.display = "none"; }}
+          />
         ) : (
           <div className="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center text-lg flex-shrink-0">🍽</div>
         )}
@@ -128,43 +131,12 @@ function ReviewCard({ review }) {
 }
 
 /* ─── Add Review Modal ─── */
-function AddReviewModal({ onClose, onAdded }) {
-  const [name, setName] = useState("");
-  const [rating, setRating] = useState(0);
+function AddReviewModal({ onClose, onAdded, dispatch }) {
+  const [name,    setName]    = useState("");
+  const [rating,  setRating]  = useState(0);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleSubmit = async () => {
-    if (!name.trim())    return setError("Please enter your name");
-    if (!rating)         return setError("Please select a rating");
-    if (!comment.trim()) return setError("Please write a comment");
-
-    setError("");
-    setLoading(true);
-    try {
-      const res = await axios.post(REVIEWS_API, {
-        userName: name.trim(),
-        rating,
-        comment: comment.trim(),
-      });
-      const newReview = res.data?.data || res.data?.review || {
-        userName: name.trim(), rating, comment: comment.trim(),
-        createdAt: new Date().toISOString(),
-      };
-      onAdded(newReview);
-      onClose();
-    } catch (err) {
-      // backend ishlamasa ham UI ga qo'shamiz
-      onAdded({
-        userName: name.trim(), rating, comment: comment.trim(),
-        createdAt: new Date().toISOString(),
-      });
-      onClose();
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [error,   setError]   = useState("");
 
   // ESC bilan yopish
   useEffect(() => {
@@ -173,13 +145,42 @@ function AddReviewModal({ onClose, onAdded }) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  const handleSubmit = async () => {
+    if (!name.trim())    return setError("Please enter your name");
+    if (!rating)         return setError("Please select a rating");
+    if (!comment.trim()) return setError("Please write a comment");
+
+    setError("");
+    setLoading(true);
+
+    const reviewData = {
+      userName:  name.trim(),
+      rating,
+      comment:   comment.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      // Redux thunk orqali POST /api/reviews
+      const result = await dispatch(addReview(reviewData));
+      onAdded(result.payload);
+      onClose();
+    } catch {
+      onAdded(reviewData);
+      onClose();
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl dark:bg-slate-800 animate-in">
-        {/* Modal header */}
+      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl dark:bg-slate-800">
+
+        {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Add a Review</h3>
           <button
@@ -235,6 +236,7 @@ function AddReviewModal({ onClose, onAdded }) {
         >
           {loading ? "Submitting..." : "Submit Review"}
         </button>
+
       </div>
     </div>
   );
@@ -244,22 +246,21 @@ function AddReviewModal({ onClose, onAdded }) {
 function CustomerReviews() {
   const dispatch = useDispatch();
   const { reviews: apiReviews, loading, error } = useSelector((state) => state.reviews);
-  const [reviews, setReviews] = useState([]);
-  const [current, setCurrent] = useState(0);
+  const [reviews,   setReviews]   = useState([]);
+  const [current,   setCurrent]   = useState(0);
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     dispatch(fetchReviews());
   }, [dispatch]);
 
-  // API dan kelganda state ga qo'yamiz
   useEffect(() => {
     setReviews(apiReviews);
   }, [apiReviews]);
 
-  const total = reviews.length;
+  const total    = reviews.length;
   const maxIndex = Math.max(0, total - VISIBLE);
-  const shown = reviews.slice(current, current + VISIBLE);
+  const shown    = reviews.slice(current, current + VISIBLE);
 
   const handleAdded = (newReview) => {
     setReviews((prev) => [newReview, ...prev]);
@@ -269,6 +270,7 @@ function CustomerReviews() {
   return (
     <>
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-50 dark:bg-slate-800 dark:border-slate-700">
+
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -284,24 +286,31 @@ function CustomerReviews() {
               disabled={current === 0}
               className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-green-500 hover:text-white hover:border-green-500 disabled:opacity-30 transition-all dark:border-slate-600"
             >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 9L4.5 6L7.5 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M7.5 9L4.5 6L7.5 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
+
             {/* Next */}
             <button
               onClick={() => setCurrent((c) => Math.min(maxIndex, c + 1))}
               disabled={current >= maxIndex}
               className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-green-500 hover:text-white hover:border-green-500 disabled:opacity-30 transition-all dark:border-slate-600"
             >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3L7.5 6L4.5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M4.5 3L7.5 6L4.5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
-            {/* ← ADD BUTTON */}
+
+            {/* Add button */}
             <button
               onClick={() => setShowModal(true)}
               className="w-8 h-8 rounded-full border-2 border-green-500 bg-green-500 hover:bg-green-600 hover:border-green-600 flex items-center justify-center text-white transition-all hover:scale-105"
               title="Add Review"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
             </button>
           </div>
@@ -318,7 +327,11 @@ function CustomerReviews() {
                 ? shown.map((review, i) => (
                     <ReviewCard key={review._id || review.id || i} review={review} />
                   ))
-                : <p className="col-span-3 text-xs text-gray-400 text-center py-6">No reviews yet. Be the first!</p>
+                : (
+                  <p className="col-span-3 text-xs text-gray-400 text-center py-6">
+                    No reviews yet. Be the first!
+                  </p>
+                )
             }
           </div>
         )}
@@ -344,6 +357,7 @@ function CustomerReviews() {
         <AddReviewModal
           onClose={() => setShowModal(false)}
           onAdded={handleAdded}
+          dispatch={dispatch}
         />
       )}
     </>

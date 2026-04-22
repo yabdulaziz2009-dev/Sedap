@@ -1,18 +1,29 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const REVIEWS_API = "https://sedab-backend.onrender.com/api/reviews";
+const API = "https://sedab-backend.onrender.com/api/reviews";
 
 export const fetchReviews = createAsyncThunk(
   "reviews/fetchReviews",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(REVIEWS_API);
+      const res = await axios.get(API);
       return res.data?.data || [];
     } catch (err) {
-      return rejectWithValue(
-        err.response?.data?.message || err.message || "Xatolik"
-      );
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
+export const addReview = createAsyncThunk(
+  "reviews/addReview",
+  async (reviewData, { rejectWithValue }) => {
+    try {
+      const res = await axios.post(API, reviewData);
+      return res.data?.data || res.data?.review || reviewData;
+    } catch {
+      // backend xato bo'lsa local data qaytarsin
+      return reviewData;
     }
   }
 );
@@ -38,6 +49,9 @@ const reviewsSlice = createSlice({
       .addCase(fetchReviews.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Xatolik yuz berdi";
+      })
+      .addCase(addReview.fulfilled, (state, action) => {
+        state.reviews.unshift(action.payload);
       });
   },
 });
