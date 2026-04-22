@@ -15,6 +15,14 @@ function Foods() {
     dispatch(fetchFoods());
   }, [dispatch]);
 
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <p className="text-red-500 text-sm">{error}</p>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex justify-around gap-5 flex-col items-center flex-wrap text-slate-700 dark:text-slate-300 p-10">
@@ -73,7 +81,7 @@ function Foods() {
   }
 
 
-  const totalPages = Math.ceil(foods?.length / limit);
+  const totalPages = Math.ceil((foods?.length || 0) / limit) || 1;
   const currentFoods = foods?.slice((page - 1) * limit, page * limit);
 
   return (

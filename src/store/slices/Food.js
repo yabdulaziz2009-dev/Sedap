@@ -7,11 +7,7 @@ export const fetchFoods = createAsyncThunk(
   "food/fetchFood",
   async (_, { rejectWithValue }) => {
     try {
-      console.log("API:", API);
-
       const res = await axios.get(API);
-
-      console.log("API response:", res.data);
 
       const foods = res.data?.data || [];
 
