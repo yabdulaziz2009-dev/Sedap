@@ -11,7 +11,7 @@ import store from './store/store'
 import CalendarPage from './Pages/CalendarPage'
 import Xchat from './Pages/Xchat'
 import GeneralCustomer from './Pages/GeneralCustomer'
-import Orders from './Pages/Orders'
+// import Orders from './Pages/Orders'
 import OrderDetail from './Pages/OrderDetail'
 import Analytics from './Pages/Analytics'
 import Reviews from './Pages/Reviews'
@@ -19,6 +19,7 @@ import Wallet from './Pages/Wallet'
 import Login from './Pages/Login'
 import Registr from './Pages/Registr'
 import { getSession } from './auth'
+import OrdersPage from './Pages/OrdersPage'
 
 const ProtectedRoute = ({ children }) => {
   const session = getSession()
@@ -91,7 +92,7 @@ const router = createBrowserRouter([
       },
       {
         path: 'orders',
-        element: <Orders />,
+        element: <OrdersPage />,
       },
       {
         path: 'orders/detail',
@@ -109,10 +110,7 @@ const router = createBrowserRouter([
         path: 'wallet',
         element: <Wallet />,
       },
-      {
-        path: "/azizPage",
-        element: <OrderListData/>,
-      },
+    
     ],
   },
   {
