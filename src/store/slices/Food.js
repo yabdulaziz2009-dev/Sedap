@@ -1,13 +1,13 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const API = import.meta.env.VITE_FOOD_API;
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const fetchFoods = createAsyncThunk(
   "food/fetchFood",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(API);
+      const res = await axios.get(`${BASE_URL}/food`);
 
       const foods = res.data?.data || [];
 
@@ -17,19 +17,14 @@ export const fetchFoods = createAsyncThunk(
         category: item.category?.name || "Food",
         subcategory: item.subcategory || "No subcategory",
         description: item.description || "No description",
-        ingredients: Array.isArray(item.ingredients)
-          ? item.ingredients
-          : [],
+        ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
         nutritionInfo: item.nutritionInfo || "No nutrition info",
         stockAvailable: item.stockAvailable ?? true,
+        image: item.image || null,
       }));
     } catch (err) {
-      console.error("Fetch error:", err);
-
       return rejectWithValue(
-        err.response?.data?.message ||
-          err.message ||
-          "Server xatolik"
+        err.response?.data?.message || err.message || "Server xatolik"
       );
     }
   }
@@ -37,34 +32,26 @@ export const fetchFoods = createAsyncThunk(
 
 const foodSlice = createSlice({
   name: "food",
-
   initialState: {
     foods: [],
     loading: false,
     error: null,
   },
-
   reducers: {},
-
   extraReducers: (builder) => {
     builder
-
       .addCase(fetchFoods.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-
       .addCase(fetchFoods.fulfilled, (state, action) => {
         state.loading = false;
         state.foods = action.payload || [];
       })
-
       .addCase(fetchFoods.rejected, (state, action) => {
         state.loading = false;
         state.error =
-          action.payload ||
-          action.error.message ||
-          "Xatolik yuz berdi";
+          action.payload || action.error.message || "Xatolik yuz berdi";
       });
   },
 });
