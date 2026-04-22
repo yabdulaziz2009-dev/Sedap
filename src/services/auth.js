@@ -7,8 +7,6 @@ const API_URL = import.meta.env.VITE_API_URL
 const TOKEN_KEY = 'sedap-token'
 const ROLE_KEY = 'sedap-role'
 const SESSION_KEY = 'sedap-session'
-const DEFAULT_TOKEN =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZTBmMjE0NTczNjA1ZjIxOGUzNzM2ZCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3NjQyNDMxMCwiZXhwIjoxNzc2NTEwNzEwfQ.soY4hpzji87D4EUVB4_X-l3s6bmi9Zd1lM8kZD2yD5c'
 
 const api = axios.create({
   baseURL: API_URL,
@@ -32,7 +30,6 @@ const dispatchAuthChange = () => {
 const parseJwt = (token) => {
   try {
     const [, payload] = token.split('.')
-
     if (!payload) return null
 
     const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
@@ -46,7 +43,7 @@ const parseJwt = (token) => {
 
 const normalizeUser = (user = {}) => ({
   id: user.id || user._id || '',
-  fullName: user.fullName || user.name || user.username || 'Admin',
+  fullName: user.fullName || user.name || user.username || 'User',
   email: user.email || user.login || '',
   login: user.login || user.email || '',
   role: user.role || 'user',
@@ -80,12 +77,7 @@ const createSessionFromToken = (token, fallbackUser = {}) => {
 }
 
 export const initializeAuth = () => {
-  const savedToken = localStorage.getItem(TOKEN_KEY)
-  const token = savedToken || DEFAULT_TOKEN
-
-  if (!savedToken && DEFAULT_TOKEN) {
-    localStorage.setItem(TOKEN_KEY, DEFAULT_TOKEN)
-  }
+  const token = localStorage.getItem(TOKEN_KEY)
 
   if (!token) return null
 
