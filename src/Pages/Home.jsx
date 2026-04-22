@@ -8,7 +8,7 @@ import {
   ResponsiveContainer, CartesianGrid,
 } from 'recharts';
 
-const apiurl = import.meta.env.VITE_API_URL;
+const apiurl = import.meta.env.VITE_API_URL; 
 
 // ── Donut (halqa) grafik ──────────────────────────────────────────────────────
 // value=foiz (0-100), color=rang, label=nom
