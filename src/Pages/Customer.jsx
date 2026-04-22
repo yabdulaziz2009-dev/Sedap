@@ -95,7 +95,7 @@ export default function CustomerDashboard() {
   };
 
   return (
-    
+
     <div className="bg-gray-100 min-h-screen p-5 font-sans">
       {/* Header */}
       <div className="mb-4">
