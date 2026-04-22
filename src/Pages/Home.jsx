@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
+import { useSelector } from 'react-redux'
 import {
   PieChart, Pie, Cell,
   LineChart, Line,
@@ -10,72 +11,66 @@ import {
 
 const apiurl = import.meta.env.VITE_API_URL;
 
-// ── Donut (halqa) grafik ──────────────────────────────────────────────────────
-// value=foiz (0-100), color=rang, label=nom
-function DonutChart({ value, color, label }) {
+function DonutChart({ value, color, label, dark }) {
   const safe = Math.min(Math.max(Number(value) || 0, 0), 100);
-  const data = [{ value: safe }, { value: 100 - safe }]; // to'lgan + bo'sh qism
+  const data = [{ value: safe }, { value: 100 - safe }];
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="relative w-24 h-24">
         <PieChart width={96} height={96}>
           <Pie data={data} cx={44} cy={44} innerRadius={30} outerRadius={44}
             startAngle={90} endAngle={-270} dataKey="value" strokeWidth={0}>
-            <Cell fill={color} />      {/* to'lgan qism */}
-            <Cell fill="#f1f5f9" />    {/* bo'sh qism */}
+            <Cell fill={color} />
+            <Cell fill={dark ? '#334155' : '#f1f5f9'} />
           </Pie>
         </PieChart>
-        {/* Markazdagi foiz yozuvi */}
-        <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-700">
+        <div className={`absolute inset-0 flex items-center justify-center text-sm font-bold ${dark ? 'text-slate-200' : 'text-slate-700'}`}>
           {safe}%
         </div>
       </div>
-      <p className="text-xs font-semibold text-slate-600 text-center">{label}</p>
+      <p className={`text-xs font-semibold text-center ${dark ? 'text-slate-400' : 'text-slate-600'}`}>{label}</p>
     </div>
   );
 }
 
-// ── Yuklanish animatsiyasi (skeleton) ─────────────────────────────────────────
-function Skeleton({ className = '' }) {
-  return <div className={`animate-pulse bg-slate-200 rounded-xl ${className}`} />;
+function Skeleton({ className = '', dark }) {
+  return <div className={`animate-pulse rounded-xl ${dark ? 'bg-slate-700' : 'bg-slate-200'} ${className}`} />;
 }
 
-// ── Statistika kartasi ────────────────────────────────────────────────────────
 const ICONS  = ['🧾', '💰', '✅', '❌'];
-const COLORS = ['bg-blue-100', 'bg-green-100', 'bg-yellow-100', 'bg-red-100'];
+const COLORS_LIGHT = ['bg-blue-100', 'bg-green-100', 'bg-yellow-100', 'bg-red-100'];
+const COLORS_DARK  = ['bg-blue-900', 'bg-green-900', 'bg-yellow-900', 'bg-red-900'];
 
-function StatCard({ name, count, index, loading }) {
-  // Yuklanayotganda skeleton ko'rsatamiz
+function StatCard({ name, count, index, loading, dark }) {
   if (loading) return (
-    <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-5 w-[23%]">
-      <Skeleton className="w-14 h-14 rounded-full" />
+    <div className={`${dark ? 'bg-slate-800' : 'bg-white'} rounded-2xl shadow p-6 flex items-center gap-5 w-[23%]`}>
+      <Skeleton dark={dark} className="w-14 h-14 rounded-full" />
       <div className="flex-1 space-y-2">
-        <Skeleton className="h-8 w-20" />
-        <Skeleton className="h-4 w-28" />
+        <Skeleton dark={dark} className="h-8 w-20" />
+        <Skeleton dark={dark} className="h-4 w-28" />
       </div>
     </div>
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-5 w-[23%] hover:shadow-md transition-shadow">
-      <div className={`${COLORS[index]} w-14 h-14 rounded-full flex items-center justify-center text-2xl`}>
+    <div className={`${dark ? 'bg-slate-800' : 'bg-white'} rounded-2xl shadow p-6 flex items-center gap-5 w-[23%] hover:shadow-md transition-shadow`}>
+      <div className={`${dark ? COLORS_DARK[index] : COLORS_LIGHT[index]} w-14 h-14 rounded-full flex items-center justify-center text-2xl`}>
         {ICONS[index]}
       </div>
       <div>
-        {/* Revenue bo'lsa dollar belgisi qo'shamiz */}
-        <p className="text-3xl font-bold text-gray-800">
+        <p className={`text-3xl font-bold ${dark ? 'text-slate-100' : 'text-gray-800'}`}>
           {name === 'Revenue' ? `$${count?.toLocaleString()}` : count?.toLocaleString()}
         </p>
-        <p className="text-gray-400 text-sm">{name}</p>
+        <p className={`text-sm ${dark ? 'text-slate-400' : 'text-gray-400'}`}>{name}</p>
         <p className="text-green-500 text-xs mt-1">↑ 4% (30 days)</p>
       </div>
     </div>
   );
 }
 
-// ── Asosiy komponent ──────────────────────────────────────────────────────────
 const Home = () => {
-  // Har bir bo'lim uchun data va loading holati
+  const dark = useSelector((state) => state.theme.mode === 'dark');
+
   const [stats,        setStats]        = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [pieData,      setPieData]      = useState([]);
@@ -89,13 +84,12 @@ const Home = () => {
   const [reviews,      setReviews]      = useState([]);
   const [revLoading2,  setRevLoading2]  = useState(true);
 
-  // useCallback — funksiya har render da qayta yaratilmasligi uchun
   const fetchStats = useCallback(async () => {
     setStatsLoading(true);
     try {
       const res  = await fetch(`${apiurl}/Dashboard`);
       const json = await res.json();
-      const d    = json.data ?? json; // json.data bo'lmasa json o'zi olinadi
+      const d    = json.data ?? json;
       setStats([
         { id: 1, name: 'Total Orders', count: Number(d.totalOrders)     || 0 },
         { id: 2, name: 'Revenue',      count: Number(d.totalRevenue)    || 0 },
@@ -121,14 +115,13 @@ const Home = () => {
     finally     { setPieLoading(false); }
   }, []);
 
-  // Quyidagi fetch lar ham xuddi shunday ishlaydi — API → json → state
   const fetchOrderChart = useCallback(async () => {
     setOrderLoading(true);
     try {
       const res  = await fetch(`${apiurl}/Dashboard/OrderChart`);
       const json = await res.json();
       const raw  = json.data ?? json;
-      setOrderData(Array.isArray(raw) ? raw : []); // array bo'lmasa bo'sh array
+      setOrderData(Array.isArray(raw) ? raw : []);
     } catch (e) { console.error(e); }
     finally     { setOrderLoading(false); }
   }, []);
@@ -166,7 +159,6 @@ const Home = () => {
     finally     { setRevLoading2(false); }
   }, []);
 
-  // Komponent birinchi yuklanganda barcha fetch lar chaqiriladi
   useEffect(() => {
     fetchStats();
     fetchPie();
@@ -176,17 +168,29 @@ const Home = () => {
     fetchReviews();
   }, []);
 
+  // Tooltip va CartesianGrid uchun dark mode style'lari
+  const tooltipStyle = {
+    borderRadius: 8,
+    fontSize: 12,
+    backgroundColor: dark ? '#1e293b' : '#fff',
+    borderColor: dark ? '#334155' : '#e2e8f0',
+    color: dark ? '#e2e8f0' : '#1e293b',
+  };
+  const axisTickColor = dark ? '#64748b' : '#94a3b8';
+  const gridColor     = dark ? '#1e293b' : '#f1f5f9';
+
   return (
-    <div className="bg-slate-100 min-h-screen">
+    <div className={`min-h-screen transition-colors duration-300 ${dark ? 'bg-slate-900' : 'bg-slate-100'}`}>
 
       {/* ── Header ── */}
       <div className="w-full flex items-center justify-between px-6 py-5">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-          <p className="text-sm text-slate-400 mt-1">Hi, Samantha. Welcome back to Sedap Admin!</p>
+          <h1 className={`text-2xl font-bold ${dark ? 'text-slate-100' : 'text-slate-800'}`}>Dashboard</h1>
+          <p className={`text-sm mt-1 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>Hi, Samantha. Welcome back to Sedap Admin!</p>
         </div>
-        <div className="flex items-center gap-3 bg-white rounded-2xl px-4 py-3 shadow-sm border border-slate-100 cursor-pointer hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-center w-10 h-10 bg-sky-50 rounded-xl">
+        <div className={`flex items-center gap-3 rounded-2xl px-4 py-3 shadow-sm border cursor-pointer hover:shadow-md transition-shadow
+          ${dark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+          <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${dark ? 'bg-sky-900' : 'bg-sky-50'}`}>
             <svg className="w-5 h-5 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" strokeWidth="2"/>
               <line x1="16" y1="2" x2="16" y2="6" strokeLinecap="round"/>
@@ -195,10 +199,10 @@ const Home = () => {
             </svg>
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-700">Filter Periode</p>
-            <p className="text-xs text-slate-400">17 April 2020 – 21 May 2020</p>
+            <p className={`text-sm font-semibold ${dark ? 'text-slate-200' : 'text-slate-700'}`}>Filter Periode</p>
+            <p className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>17 April 2020 – 21 May 2020</p>
           </div>
-          <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+          <svg className={`w-4 h-4 ${dark ? 'text-slate-500' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
           </svg>
         </div>
@@ -207,8 +211,8 @@ const Home = () => {
       {/* ── Stat kartalar ── */}
       <div className="flex justify-between mt-5 px-6 gap-4">
         {statsLoading
-          ? Array(4).fill(0).map((_, i) => <StatCard key={i} index={i} loading />)
-          : stats.map((item, i) => <StatCard key={item.id} {...item} index={i} loading={false} />)
+          ? Array(4).fill(0).map((_, i) => <StatCard key={i} index={i} loading dark={dark} />)
+          : stats.map((item, i) => <StatCard key={item.id} {...item} index={i} loading={false} dark={dark} />)
         }
       </div>
 
@@ -216,32 +220,32 @@ const Home = () => {
       <div className="px-6 mt-6 grid grid-cols-2 gap-4">
 
         {/* 1. Pie Chart */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
+        <div className={`rounded-2xl p-5 shadow-sm ${dark ? 'bg-slate-800' : 'bg-white'}`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-slate-800">Pie Chart</h2>
-            <div className="flex gap-3 text-xs text-slate-500">
+            <h2 className={`text-base font-bold ${dark ? 'text-slate-100' : 'text-slate-800'}`}>Pie Chart</h2>
+            <div className={`flex gap-3 text-xs ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
               <label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" readOnly /> Chart</label>
               <label className="flex items-center gap-1 cursor-pointer"><input type="checkbox" defaultChecked className="accent-red-500" readOnly /> Show Value</label>
             </div>
           </div>
           {pieLoading
-            ? <div className="flex justify-around">{[0,1,2].map(i => <Skeleton key={i} className="w-24 h-24 rounded-full" />)}</div>
-            : <div className="flex justify-around">{pieData.map((d, i) => <DonutChart key={i} {...d} />)}</div>
+            ? <div className="flex justify-around">{[0,1,2].map(i => <Skeleton key={i} dark={dark} className="w-24 h-24 rounded-full" />)}</div>
+            : <div className="flex justify-around">{pieData.map((d, i) => <DonutChart key={i} {...d} dark={dark} />)}</div>
           }
         </div>
 
-        {/* 2. Chart Order — Area grafik */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
+        {/* 2. Chart Order */}
+        <div className={`rounded-2xl p-5 shadow-sm ${dark ? 'bg-slate-800' : 'bg-white'}`}>
           <div className="flex items-center justify-between mb-1">
             <div>
-              <h2 className="text-base font-bold text-slate-800">Chart Order</h2>
-              <p className="text-xs text-slate-400">Lorem ipsum dolor sit amet</p>
+              <h2 className={`text-base font-bold ${dark ? 'text-slate-100' : 'text-slate-800'}`}>Chart Order</h2>
+              <p className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>Lorem ipsum dolor sit amet</p>
             </div>
-            <button className="border border-blue-500 text-blue-500 text-xs px-3 py-1.5 rounded-full hover:bg-blue-50 transition">
+            <button className="border border-blue-500 text-blue-500 text-xs px-3 py-1.5 rounded-full hover:bg-blue-50 dark:hover:bg-blue-950 transition">
               ↓ Save Report
             </button>
           </div>
-          {orderLoading ? <Skeleton className="h-40 w-full mt-2" /> : (
+          {orderLoading ? <Skeleton dark={dark} className="h-40 w-full mt-2" /> : (
             <ResponsiveContainer width="100%" height={160}>
               <AreaChart data={orderData}>
                 <defs>
@@ -250,31 +254,31 @@ const Home = () => {
                     <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}/>
-                <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }}/>
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: axisTickColor }} axisLine={false} tickLine={false}/>
+                <Tooltip contentStyle={tooltipStyle}/>
                 <Area type="monotone" dataKey="orders" stroke="#3b82f6" fill="url(#grad)" strokeWidth={2} dot={false}/>
               </AreaChart>
             </ResponsiveContainer>
           )}
         </div>
 
-        {/* 3. Total Revenue — Line grafik */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
+        {/* 3. Total Revenue */}
+        <div className={`rounded-2xl p-5 shadow-sm ${dark ? 'bg-slate-800' : 'bg-white'}`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-slate-800">Total Revenue</h2>
-            <div className="flex gap-3 text-xs text-slate-500">
+            <h2 className={`text-base font-bold ${dark ? 'text-slate-100' : 'text-slate-800'}`}>Total Revenue</h2>
+            <div className={`flex gap-3 text-xs ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/> 2020</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block"/> 2021</span>
             </div>
           </div>
-          {revLoading ? <Skeleton className="h-52 w-full" /> : (
+          {revLoading ? <Skeleton dark={dark} className="h-52 w-full" /> : (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}/>
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}
+                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false}/>
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: axisTickColor }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontSize: 11, fill: axisTickColor }} axisLine={false} tickLine={false}
                   tickFormatter={v => `$${(v/1000).toFixed(0)}0k`}/>
-                <Tooltip formatter={v => `$${Number(v).toLocaleString()}`} contentStyle={{ borderRadius: 8, fontSize: 12 }}/>
+                <Tooltip formatter={v => `$${Number(v).toLocaleString()}`} contentStyle={tooltipStyle}/>
                 <Line type="monotone" dataKey="y2020" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: '#3b82f6' }}/>
                 <Line type="monotone" dataKey="y2021" stroke="#f87171" strokeWidth={2} dot={{ r: 3, fill: '#f87171' }}/>
               </LineChart>
@@ -282,18 +286,20 @@ const Home = () => {
           )}
         </div>
 
-        {/* 4. Customer Map — Bar grafik */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
+        {/* 4. Customer Map */}
+        <div className={`rounded-2xl p-5 shadow-sm ${dark ? 'bg-slate-800' : 'bg-white'}`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-slate-800">Customer Map</h2>
-            <button className="border border-slate-200 text-xs px-3 py-1 rounded-lg">Weekly ▼</button>
+            <h2 className={`text-base font-bold ${dark ? 'text-slate-100' : 'text-slate-800'}`}>Customer Map</h2>
+            <button className={`border text-xs px-3 py-1 rounded-lg ${dark ? 'border-slate-600 text-slate-300' : 'border-slate-200 text-slate-700'}`}>
+              Weekly ▼
+            </button>
           </div>
-          {custLoading ? <Skeleton className="h-52 w-full" /> : (
+          {custLoading ? <Skeleton dark={dark} className="h-52 w-full" /> : (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={customerData} barCategoryGap="30%">
-                <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}/>
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false}/>
-                <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }}/>
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: axisTickColor }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontSize: 11, fill: axisTickColor }} axisLine={false} tickLine={false}/>
+                <Tooltip contentStyle={tooltipStyle}/>
                 <Bar dataKey="red"    fill="#f87171" radius={[4,4,0,0]}/>
                 <Bar dataKey="yellow" fill="#facc15" radius={[4,4,0,0]}/>
               </BarChart>
@@ -307,58 +313,61 @@ const Home = () => {
       <div className="px-6 mt-6 pb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-bold text-slate-800">Customer Review</h2>
-            <p className="text-xs text-slate-400">Eum fuga consequatur aliquip sit</p>
+            <h2 className={`text-base font-bold ${dark ? 'text-slate-100' : 'text-slate-800'}`}>Customer Review</h2>
+            <p className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>Eum fuga consequatur aliquip sit</p>
           </div>
           <div className="flex gap-2">
-            <button className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50">‹</button>
-            <button className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50">›</button>
+            <button className={`w-8 h-8 rounded-full border flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700
+              ${dark ? 'border-slate-600 text-slate-400' : 'border-slate-200 text-slate-400'}`}>‹</button>
+            <button className={`w-8 h-8 rounded-full border flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700
+              ${dark ? 'border-slate-600 text-slate-400' : 'border-slate-200 text-slate-400'}`}>›</button>
           </div>
         </div>
 
         {revLoading2 ? (
-          // Yuklanayotganda 3 ta skeleton karta
           <div className="grid grid-cols-3 gap-4">
             {[0,1,2].map(i => (
-              <div key={i} className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
+              <div key={i} className={`rounded-2xl p-5 shadow-sm space-y-3 ${dark ? 'bg-slate-800' : 'bg-white'}`}>
                 <div className="flex items-center gap-3">
-                  <Skeleton className="w-10 h-10 rounded-full" />
+                  <Skeleton dark={dark} className="w-10 h-10 rounded-full" />
                   <div className="flex-1 space-y-1">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-16" />
+                    <Skeleton dark={dark} className="h-4 w-24" />
+                    <Skeleton dark={dark} className="h-3 w-16" />
                   </div>
                 </div>
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-4 w-20" />
+                <Skeleton dark={dark} className="h-16 w-full" />
+                <Skeleton dark={dark} className="h-4 w-20" />
               </div>
             ))}
           </div>
         ) : reviews.length === 0 ? (
-          <p className="text-slate-400 text-sm text-center py-8">No reviews yet</p>
+          <p className={`text-sm text-center py-8 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>No reviews yet</p>
         ) : (
-          // Review kartalar — max 3 ta ko'rsatiladi
           <div className="grid grid-cols-3 gap-4">
             {reviews.slice(0, 3).map((r, i) => (
-              <div key={i} className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div key={i} className={`rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow ${dark ? 'bg-slate-800' : 'bg-white'}`}>
                 <div className="flex items-center gap-3 mb-3">
-                  {/* Rasm bo'lsa ko'rsatamiz, bo'lmasa ismning bosh harfi */}
                   {r.image
                     ? <img src={r.image} alt={r.name} className="w-10 h-10 rounded-full object-cover" />
-                    : <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500">{(r.name ?? '?')[0]}</div>
+                    : <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold
+                        ${dark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-500'}`}>
+                        {(r.name ?? '?')[0]}
+                      </div>
                   }
                   <div>
-                    <p className="text-sm font-semibold text-slate-700">{r.name}</p>
-                    <p className="text-xs text-slate-400">{r.date}</p>
+                    <p className={`text-sm font-semibold ${dark ? 'text-slate-200' : 'text-slate-700'}`}>{r.name}</p>
+                    <p className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{r.date}</p>
                   </div>
                   {r.foodImage && <img src={r.foodImage} alt="food" className="ml-auto w-12 h-12 rounded-xl object-cover" />}
                 </div>
-                <p className="text-xs text-slate-500 leading-relaxed line-clamp-4">{r.text ?? r.comment}</p>
-                {/* Yulduzcha reytingi */}
+                <p className={`text-xs leading-relaxed line-clamp-4 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {r.text ?? r.comment}
+                </p>
                 <div className="flex items-center gap-1 mt-3">
                   {Array(5).fill(0).map((_, s) => (
-                    <span key={s} className={`text-sm ${s < Math.round(r.rating) ? 'text-yellow-400' : 'text-slate-200'}`}>★</span>
+                    <span key={s} className={`text-sm ${s < Math.round(r.rating) ? 'text-yellow-400' : dark ? 'text-slate-600' : 'text-slate-200'}`}>★</span>
                   ))}
-                  <span className="text-xs text-slate-500 ml-1">{Number(r.rating).toFixed(1)}</span>
+                  <span className={`text-xs ml-1 ${dark ? 'text-slate-500' : 'text-slate-500'}`}>{Number(r.rating).toFixed(1)}</span>
                 </div>
               </div>
             ))}
