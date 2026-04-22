@@ -1,16 +1,113 @@
-import { Children } from "react";
-import App from "./App";
-import Home from "./Pages/Home";
-import OrderListData from "./Pages/OrderListData";
-import { createBrowserRouter } from "react-router-dom";
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom'
+import App from './App'
+import Home from './Pages/Home'
+import Foods from './Pages/Foods'
+import FoodDetail from './Pages/FoodDetail'
+import './index.css'
+import { Provider } from 'react-redux'
+import store from './store/store'
+import CalendarPage from './Pages/CalendarPage'
+import Xchat from './Pages/Xchat'
+import GeneralCustomer from './Pages/GeneralCustomer'
+import Orders from './Pages/Orders'
+import OrderDetail from './Pages/OrderDetail'
+import Analytics from './Pages/Analytics'
+import Reviews from './Pages/Reviews'
+import Wallet from './Pages/Wallet'
+import Login from './Pages/Login'
+import Registr from './Pages/Registr'
+import { getSession } from './auth'
+
+const ProtectedRoute = ({ children }) => {
+  const session = getSession()
+
+  if (!session) {
+    return <Navigate to="/login" replace />
+  }
+
+  return children
+}
+
+const PublicOnlyRoute = ({ children }) => {
+  const session = getSession()
+
+  if (session) {
+    return <Navigate to="/" replace />
+  }
+
+  return children
+}
+
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <App />,
-    Children: [
+    path: '/register',
+    element: (
+      <PublicOnlyRoute>
+        <Registr />
+      </PublicOnlyRoute>
+    ),
+  },
+  {
+    path: '/login',
+    element: (
+      <PublicOnlyRoute>
+        <Login />
+      </PublicOnlyRoute>
+    ),
+  },
+  {
+    path: '/',
+    element: (
+      <ProtectedRoute>
+        <App />
+      </ProtectedRoute>
+    ),
+    children: [
       {
-        path: "/",
-        element: <Home/>,
+        index: true,
+        element: <Home />,
+      },
+      {
+        path: 'foods',
+        element: <Foods />,
+      },
+      {
+        path: 'foods/:id',
+        element: <FoodDetail />,
+      },
+      {
+        path: 'calendar',
+        element: <CalendarPage />,
+      },
+      {
+        path: 'xchat',
+        element: <Xchat />,
+      },
+      {
+        path: 'customers',
+        element: <GeneralCustomer />,
+      },
+      {
+        path: 'orders',
+        element: <Orders />,
+      },
+      {
+        path: 'orders/detail',
+        element: <OrderDetail />,
+      },
+      {
+        path: 'analytics',
+        element: <Analytics />,
+      },
+      {
+        path: 'reviews',
+        element: <Reviews />,
+      },
+      {
+        path: 'wallet',
+        element: <Wallet />,
       },
       {
         path: "/azizPage",
@@ -18,10 +115,16 @@ const router = createBrowserRouter([
       },
     ],
   },
-]);
+  {
+    path: '*',
+    element: <Navigate to="/login" replace />,
+  },
+])
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>
   </React.StrictMode>
-);
+)

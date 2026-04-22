@@ -1,0 +1,76 @@
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import axios from "axios";
+
+const API = import.meta.env.VITE_FOOD_API;
+
+export const fetchFoods = createAsyncThunk(
+  "food/fetchFood",
+  async (_, { rejectWithValue }) => {
+    try {
+      console.log("API:", API);
+
+      const res = await axios.get(API);
+
+      console.log("API response:", res.data);
+
+      const foods = res.data?.data || [];
+
+      return foods.map((item) => ({
+        ...item,
+        id: item._id,
+        category: item.category?.name || "Food",
+        subcategory: item.subcategory || "No subcategory",
+        description: item.description || "No description",
+        ingredients: Array.isArray(item.ingredients)
+          ? item.ingredients
+          : [],
+        nutritionInfo: item.nutritionInfo || "No nutrition info",
+        stockAvailable: item.stockAvailable ?? true,
+      }));
+    } catch (err) {
+      console.error("Fetch error:", err);
+
+      return rejectWithValue(
+        err.response?.data?.message ||
+          err.message ||
+          "Server xatolik"
+      );
+    }
+  }
+);
+
+const foodSlice = createSlice({
+  name: "food",
+
+  initialState: {
+    foods: [],
+    loading: false,
+    error: null,
+  },
+
+  reducers: {},
+
+  extraReducers: (builder) => {
+    builder
+
+      .addCase(fetchFoods.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(fetchFoods.fulfilled, (state, action) => {
+        state.loading = false;
+        state.foods = action.payload || [];
+      })
+
+      .addCase(fetchFoods.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.payload ||
+          action.error.message ||
+          "Xatolik yuz berdi";
+      });
+  },
+});
+
+export default foodSlice.reducer;
