@@ -1,15 +1,15 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const API = import.meta.env.VITE_FOOD_API;
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const fetchFoods = createAsyncThunk(
   "food/fetchFood",
   async (_, { rejectWithValue }) => {
     try {
-      console.log("API:", API);
+      console.log("API:", BASE_URL);
 
-      const res = await axios.get(API);
+      const res = await axios.get(`${BASE_URL}/food`);
 
       console.log("API response:", res.data);
 
@@ -26,14 +26,15 @@ export const fetchFoods = createAsyncThunk(
           : [],
         nutritionInfo: item.nutritionInfo || "No nutrition info",
         stockAvailable: item.stockAvailable ?? true,
+        image: item.image || null,   // 👈 SHU MUHIM
       }));
     } catch (err) {
       console.error("Fetch error:", err);
 
       return rejectWithValue(
         err.response?.data?.message ||
-          err.message ||
-          "Server xatolik"
+        err.message ||
+        "Server xatolik"
       );
     }
   }
@@ -41,18 +42,14 @@ export const fetchFoods = createAsyncThunk(
 
 const foodSlice = createSlice({
   name: "food",
-
   initialState: {
     foods: [],
     loading: false,
     error: null,
   },
-
   reducers: {},
-
   extraReducers: (builder) => {
     builder
-
       .addCase(fetchFoods.pending, (state) => {
         state.loading = true;
         state.error = null;
