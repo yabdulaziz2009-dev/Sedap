@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useSelector } from 'react-redux'
+import { getSession } from '../auth'
 import {
   PieChart, Pie, Cell,
   LineChart, Line,
@@ -10,6 +11,17 @@ import {
 } from 'recharts';
 
 const apiurl = import.meta.env.VITE_API_URL;
+
+// ─── Auth fetch — attaches Bearer token to every Dashboard request ─────────────
+const authFetch = (url) => {
+  const token = localStorage.getItem('sedap-token');
+  return fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+};
 
 function DonutChart({ value, color, label, dark }) {
   const safe = Math.min(Math.max(Number(value) || 0, 0), 100);
@@ -37,9 +49,9 @@ function Skeleton({ className = '', dark }) {
   return <div className={`animate-pulse rounded-xl ${dark ? 'bg-slate-700' : 'bg-slate-200'} ${className}`} />;
 }
 
-const ICONS = ['🧾', '💰', '✅', '❌'];
-const COLORS_LIGHT = ['bg-blue-100', 'bg-green-100', 'bg-yellow-100', 'bg-red-100'];
-const COLORS_DARK = ['bg-blue-900', 'bg-green-900', 'bg-yellow-900', 'bg-red-900'];
+const ICONS         = ['🧾', '💰', '✅', '❌'];
+const COLORS_LIGHT  = ['bg-blue-100', 'bg-green-100', 'bg-yellow-100', 'bg-red-100'];
+const COLORS_DARK   = ['bg-blue-900', 'bg-green-900', 'bg-yellow-900', 'bg-red-900'];
 
 function StatCard({ name, count, index, loading, dark }) {
   if (loading) return (
@@ -71,91 +83,95 @@ function StatCard({ name, count, index, loading, dark }) {
 const Home = () => {
   const dark = useSelector((state) => state.theme.mode === 'dark');
 
-  const [stats, setStats] = useState([]);
+  // ── Name from auth session (set at login, not from /api/profile) ──────────
+  const session   = getSession();
+  const firstName = (session?.fullName || session?.name || 'Admin').split(' ')[0];
+
+  const [stats,        setStats]        = useState([]);
   const [statsLoading, setStatsLoading] = useState(true);
-  const [pieData, setPieData] = useState([]);
-  const [pieLoading, setPieLoading] = useState(true);
-  const [orderData, setOrderData] = useState([]);
+  const [pieData,      setPieData]      = useState([]);
+  const [pieLoading,   setPieLoading]   = useState(true);
+  const [orderData,    setOrderData]    = useState([]);
   const [orderLoading, setOrderLoading] = useState(true);
-  const [revenueData, setRevenueData] = useState([]);
-  const [revLoading, setRevLoading] = useState(true);
+  const [revenueData,  setRevenueData]  = useState([]);
+  const [revLoading,   setRevLoading]   = useState(true);
   const [customerData, setCustomerData] = useState([]);
-  const [custLoading, setCustLoading] = useState(true);
-  const [reviews, setReviews] = useState([]);
-  const [revLoading2, setRevLoading2] = useState(true);
+  const [custLoading,  setCustLoading]  = useState(true);
+  const [reviews,      setReviews]      = useState([]);
+  const [revLoading2,  setRevLoading2]  = useState(true);
 
   const fetchStats = useCallback(async () => {
     setStatsLoading(true);
     try {
-      const res = await fetch(`${apiurl}/Dashboard`);
+      const res  = await authFetch(`${apiurl}/Dashboard`);
       const json = await res.json();
-      const d = json.data ?? json;
+      const d    = json.data ?? json;
       setStats([
-        { id: 1, name: 'Total Orders', count: Number(d.totalOrders) || 0 },
-        { id: 2, name: 'Revenue', count: Number(d.totalRevenue) || 0 },
-        { id: 3, name: 'Ready', count: Number(d.readyOrders) || 0 },
-        { id: 4, name: 'Cancelled', count: Number(d.cancelledOrders) || 0 },
+        { id: 1, name: 'Total Orders', count: Number(d.totalOrders)     || 0 },
+        { id: 2, name: 'Revenue',      count: Number(d.totalRevenue)    || 0 },
+        { id: 3, name: 'Ready',        count: Number(d.readyOrders)     || 0 },
+        { id: 4, name: 'Cancelled',    count: Number(d.cancelledOrders) || 0 },
       ]);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Dashboard/stats:', e); }
     finally { setStatsLoading(false); }
   }, []);
 
   const fetchPie = useCallback(async () => {
     setPieLoading(true);
     try {
-      const res = await fetch(`${apiurl}/Dashboard/PieChart`);
+      const res  = await authFetch(`${apiurl}/Dashboard/PieChart`);
       const json = await res.json();
-      const d = json.data ?? json;
+      const d    = json.data ?? json;
       setPieData([
-        { name: 'Total Order', value: Number(d.totalOrderPercent) || 0, color: '#ef4444' },
+        { name: 'Total Order',     value: Number(d.totalOrderPercent)     || 0, color: '#ef4444' },
         { name: 'Customer Growth', value: Number(d.customerGrowthPercent) || 0, color: '#10b981' },
-        { name: 'Total Revenue', value: Number(d.totalRevenuePercent) || 0, color: '#3b82f6' },
+        { name: 'Total Revenue',   value: Number(d.totalRevenuePercent)   || 0, color: '#3b82f6' },
       ]);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Dashboard/PieChart:', e); }
     finally { setPieLoading(false); }
   }, []);
 
   const fetchOrderChart = useCallback(async () => {
     setOrderLoading(true);
     try {
-      const res = await fetch(`${apiurl}/Dashboard/OrderChart`);
+      const res  = await authFetch(`${apiurl}/Dashboard/OrderChart`);
       const json = await res.json();
-      const raw = json.data ?? json;
+      const raw  = json.data ?? json;
       setOrderData(Array.isArray(raw) ? raw : []);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Dashboard/OrderChart:', e); }
     finally { setOrderLoading(false); }
   }, []);
 
   const fetchRevenue = useCallback(async () => {
     setRevLoading(true);
     try {
-      const res = await fetch(`${apiurl}/Dashboard/RevenueChart`);
+      const res  = await authFetch(`${apiurl}/Dashboard/RevenueChart`);
       const json = await res.json();
-      const raw = json.data ?? json;
+      const raw  = json.data ?? json;
       setRevenueData(Array.isArray(raw) ? raw : []);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Dashboard/RevenueChart:', e); }
     finally { setRevLoading(false); }
   }, []);
 
   const fetchCustomer = useCallback(async () => {
     setCustLoading(true);
     try {
-      const res = await fetch(`${apiurl}/Dashboard/CustomerMap`);
+      const res  = await authFetch(`${apiurl}/Dashboard/CustomerMap`);
       const json = await res.json();
-      const raw = json.data ?? json;
+      const raw  = json.data ?? json;
       setCustomerData(Array.isArray(raw) ? raw : []);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Dashboard/CustomerMap:', e); }
     finally { setCustLoading(false); }
   }, []);
 
   const fetchReviews = useCallback(async () => {
     setRevLoading2(true);
     try {
-      const res = await fetch(`${apiurl}/Dashboard/CustomerReviews`);
+      const res  = await authFetch(`${apiurl}/Dashboard/CustomerReviews`);
       const json = await res.json();
-      const raw = json.data ?? json;
+      const raw  = json.data ?? json;
       setReviews(Array.isArray(raw) ? raw : []);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Dashboard/CustomerReviews:', e); }
     finally { setRevLoading2(false); }
   }, []);
 
@@ -168,16 +184,15 @@ const Home = () => {
     fetchReviews();
   }, []);
 
-  // Tooltip va CartesianGrid uchun dark mode style'lari
   const tooltipStyle = {
     borderRadius: 8,
     fontSize: 12,
     backgroundColor: dark ? '#1e293b' : '#fff',
-    borderColor: dark ? '#334155' : '#e2e8f0',
-    color: dark ? '#e2e8f0' : '#1e293b',
+    borderColor:     dark ? '#334155' : '#e2e8f0',
+    color:           dark ? '#e2e8f0' : '#1e293b',
   };
   const axisTickColor = dark ? '#64748b' : '#94a3b8';
-  const gridColor = dark ? '#1e293b' : '#f1f5f9';
+  const gridColor     = dark ? '#1e293b' : '#f1f5f9';
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${dark ? 'bg-slate-900' : 'bg-slate-100'}`}>
@@ -186,7 +201,9 @@ const Home = () => {
       <div className="w-full flex items-center justify-between px-6 py-5">
         <div>
           <h1 className={`text-2xl font-bold ${dark ? 'text-slate-100' : 'text-slate-800'}`}>Dashboard</h1>
-          <p className={`text-sm mt-1 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>Hi, Samantha. Welcome back to Sedap Admin!</p>
+          <p className={`text-sm mt-1 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+            Hi, {firstName}. Welcome back to Sedap Admin!
+          </p>
         </div>
         <div className={`flex items-center gap-3 rounded-2xl px-4 py-3 shadow-sm border cursor-pointer hover:shadow-md transition-shadow
           ${dark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
@@ -194,8 +211,8 @@ const Home = () => {
             <svg className="w-5 h-5 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
               <line x1="16" y1="2" x2="16" y2="6" strokeLinecap="round" />
-              <line x1="8" y1="2" x2="8" y2="6" strokeLinecap="round" />
-              <line x1="3" y1="10" x2="21" y2="10" />
+              <line x1="8"  y1="2" x2="8"  y2="6" strokeLinecap="round" />
+              <line x1="3"  y1="10" x2="21" y2="10" />
             </svg>
           </div>
           <div>
@@ -208,7 +225,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* ── Stat kartalar ── */}
+      {/* ── Stat Cards ── */}
       <div className="flex justify-between mt-5 px-6 gap-4">
         {statsLoading
           ? Array(4).fill(0).map((_, i) => <StatCard key={i} index={i} loading dark={dark} />)
@@ -216,7 +233,7 @@ const Home = () => {
         }
       </div>
 
-      {/* ── Grafiklar (2x2 grid) ── */}
+      {/* ── Charts 2×2 ── */}
       <div className="px-6 mt-6 grid grid-cols-2 gap-4">
 
         {/* 1. Pie Chart */}
@@ -229,7 +246,7 @@ const Home = () => {
             </div>
           </div>
           {pieLoading
-            ? <div className="flex justify-around">{[0, 1, 2].map(i => <Skeleton key={i} dark={dark} className="w-24 h-24 rounded-full" />)}</div>
+            ? <div className="flex justify-around">{[0,1,2].map(i => <Skeleton key={i} dark={dark} className="w-24 h-24 rounded-full" />)}</div>
             : <div className="flex justify-around">{pieData.map((d, i) => <DonutChart key={i} {...d} dark={dark} />)}</div>
           }
         </div>
@@ -241,7 +258,7 @@ const Home = () => {
               <h2 className={`text-base font-bold ${dark ? 'text-slate-100' : 'text-slate-800'}`}>Chart Order</h2>
               <p className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>Lorem ipsum dolor sit amet</p>
             </div>
-            <button className="border border-blue-500 text-blue-500 text-xs px-3 py-1.5 rounded-full hover:bg-blue-50 dark:hover:bg-blue-950 transition">
+            <button className="border border-blue-500 text-blue-500 text-xs px-3 py-1.5 rounded-full hover:bg-blue-50 transition">
               ↓ Save Report
             </button>
           </div>
@@ -250,8 +267,8 @@ const Home = () => {
               <AreaChart data={orderData}>
                 <defs>
                   <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}   />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="day" tick={{ fontSize: 11, fill: axisTickColor }} axisLine={false} tickLine={false} />
@@ -300,7 +317,7 @@ const Home = () => {
                 <XAxis dataKey="day" tick={{ fontSize: 11, fill: axisTickColor }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: axisTickColor }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="red" fill="#f87171" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="red"    fill="#f87171" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="yellow" fill="#facc15" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -317,16 +334,16 @@ const Home = () => {
             <p className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>Eum fuga consequatur aliquip sit</p>
           </div>
           <div className="flex gap-2">
-            <button className={`w-8 h-8 rounded-full border flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700
+            <button className={`w-8 h-8 rounded-full border flex items-center justify-center hover:bg-slate-50
               ${dark ? 'border-slate-600 text-slate-400' : 'border-slate-200 text-slate-400'}`}>‹</button>
-            <button className={`w-8 h-8 rounded-full border flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700
+            <button className={`w-8 h-8 rounded-full border flex items-center justify-center hover:bg-slate-50
               ${dark ? 'border-slate-600 text-slate-400' : 'border-slate-200 text-slate-400'}`}>›</button>
           </div>
         </div>
 
         {revLoading2 ? (
           <div className="grid grid-cols-3 gap-4">
-            {[0, 1, 2].map(i => (
+            {[0,1,2].map(i => (
               <div key={i} className={`rounded-2xl p-5 shadow-sm space-y-3 ${dark ? 'bg-slate-800' : 'bg-white'}`}>
                 <div className="flex items-center gap-3">
                   <Skeleton dark={dark} className="w-10 h-10 rounded-full" />
@@ -351,8 +368,8 @@ const Home = () => {
                     ? <img src={r.image} alt={r.name} className="w-10 h-10 rounded-full object-cover" />
                     : <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold
                         ${dark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-500'}`}>
-                      {(r.name ?? '?')[0]}
-                    </div>
+                        {(r.name ?? '?')[0]}
+                      </div>
                   }
                   <div>
                     <p className={`text-sm font-semibold ${dark ? 'text-slate-200' : 'text-slate-700'}`}>{r.name}</p>

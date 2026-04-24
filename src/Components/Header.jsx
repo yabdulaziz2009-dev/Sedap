@@ -1,11 +1,33 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Link, useNavigate } from 'react-router-dom';
 import { toggleTheme } from '../store/slices/theme';
-import { FiSearch, FiBell, FiMessageSquare, FiGift, FiSettings, FiSun, FiMoon } from 'react-icons/fi';
+import { clearSession, getSession } from '../auth';
+import { FiSearch, FiBell, FiMessageSquare, FiGift, FiSettings, FiSun, FiMoon, FiLogOut, FiUser } from 'react-icons/fi';
 
 const Header = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { mode } = useSelector((state) => state.theme);
+  const session = getSession();
+
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleLogout = () => {
+    clearSession();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <header className="bg-[#f3f4f6] dark:bg-slate-800 flex items-center justify-between px-8 py-4 sticky top-0 z-20">
@@ -57,18 +79,59 @@ const Header = () => {
 
         <div className="h-8 w-px bg-gray-200 dark:bg-slate-600"></div>
 
-        {/* User Profile */}
-        <div className="flex items-center gap-3 cursor-pointer">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm text-gray-500 dark:text-slate-400">Hello, <span className="font-semibold text-gray-800 dark:text-slate-100">Samantha</span></p>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
-            <img
-              src="https://randomuser.me/api/portraits/women/44.jpg"
-              alt="User Avatar"
-              className="w-full h-full object-cover"
-            />
-          </div>
+        {/* User Profile + Dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setOpen((prev) => !prev)}
+            className="flex items-center gap-3 cursor-pointer focus:outline-none"
+          >
+            <div className="text-right hidden sm:block">
+              <p className="text-sm text-gray-500 dark:text-slate-400">
+                Hello, <span className="font-semibold text-gray-800 dark:text-slate-100">{session?.fullName || 'User'}</span>
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
+              <img
+                src={session?.img || 'https://via.placeholder.com/150'}
+                alt="User Avatar"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </button>
+
+          {/* Dropdown */}
+          {open && (
+            <div className="absolute right-0 top-12 w-52 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 py-2 z-50">
+              {/* User info */}
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+                <p className="text-sm font-semibold text-gray-800 dark:text-slate-100 truncate">
+                  {session?.fullName || 'User'}
+                </p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 truncate mt-0.5">
+                  {session?.email || ''}
+                </p>
+              </div>
+
+              {/* Profile */}
+              <Link 
+                to="/profile" 
+                onClick={() => setOpen(false)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                <FiUser size={15} className="text-gray-400 dark:text-slate-500" />
+                Profile
+              </Link>
+
+              {/* Logout */}
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-b-2xl"
+              >
+                <FiLogOut size={15} />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
