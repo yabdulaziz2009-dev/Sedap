@@ -44,7 +44,12 @@ export default function Xchat() {
 
         socket.on("receive-message", (msg) => {
             if (msg.room === activeRoom.current) {
-                setMessages(prev => [...prev, msg]);
+                setMessages(prev => {
+                    // Dublikat xabarlar tushishini oldini olish (ID yoki matn/vaqt bo'yicha)
+                    const exists = prev.some(m => m._id === msg._id || (m.text === msg.text && m.sender === msg.sender && Math.abs(new Date(m.createdAt) - new Date(msg.createdAt)) < 1000));
+                    if (exists) return prev;
+                    return [...prev, msg];
+                });
             } else {
                 setUnread(prev => ({ ...prev, [msg.room]: (prev[msg.room] || 0) + 1 }));
             }
@@ -73,12 +78,25 @@ export default function Xchat() {
         if (found) socket.emit(found.joinEvent);
 
         setUnread(prev => ({ ...prev, [room]: 0 }));
+
+        // Local storage'dan ushbu xona uchun keshni tekshirish
+        const cachedMessages = localStorage.getItem(`sedap-chat-${room}`);
+        if (cachedMessages) {
+            setMessages(JSON.parse(cachedMessages));
+        } else {
+            setMessages([]);
+        }
+
         setLoading(true);
-        setMessages([]);
 
         fetch(`${API}/chat?room=${room}`)
             .then(r => r.json())
-            .then(json => setMessages(Array.isArray(json) ? json : json.data || []))
+            .then(json => {
+                const fetchedMessages = Array.isArray(json) ? json : json.data || [];
+                setMessages(fetchedMessages);
+                // Kelgan xabarlarni keshga saqlash
+                localStorage.setItem(`sedap-chat-${room}`, JSON.stringify(fetchedMessages));
+            })
             .catch(() => setMessages([]))
             .finally(() => setLoading(false));
     }, [room]);
@@ -87,14 +105,32 @@ export default function Xchat() {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
+    // Xabarlar ro'yxati o'zgarganda (yangi xabar kelganda yoki yuborilganda) saqlash
+    useEffect(() => {
+        if (messages.length > 0) {
+            localStorage.setItem(`sedap-chat-${room}`, JSON.stringify(messages));
+        }
+    }, [messages, room]);
+
     const send = () => {
         if (!text.trim() || !socket) return;
-        socket.emit("send-message", {
+        
+        const newMsg = {
+            _id: `temp-${Date.now()}`, // Vaqtinchalik ID
             room,
             sender: ME.name,
             text: text.trim(),
             avatar: ME.avatar,
-        });
+            createdAt: new Date().toISOString(),
+        };
+
+        // 1. Serverga yuborish
+        socket.emit("send-message", newMsg);
+
+        // 2. Local state'ga darhol qo'shish (Optimistic update)
+        setMessages(prev => [...prev, newMsg]);
+
+        // 3. Inputni tozalash
         setText("");
     };
 
