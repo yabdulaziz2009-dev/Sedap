@@ -5,7 +5,7 @@ import { auth, googleProvider } from './firebase'
 const API_URL = import.meta.env.VITE_API_URL
 
 const TOKEN_KEY = 'sedap-token'
-const ROLE_KEY = 'sedap-role'   
+const ROLE_KEY = 'sedap-role'
 const SESSION_KEY = 'sedap-session'
 
 
