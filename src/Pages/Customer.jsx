@@ -332,7 +332,7 @@ export default function CustomerDashboard() {
             </div> */}
           </div>
         </aside>
-
+     
         {/* ── MAIN CONTENT ───────────────────────────────────────────────── */}
         <main className="flex-1 overflow-y-auto p-6">
 
