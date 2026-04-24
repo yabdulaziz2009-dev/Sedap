@@ -150,7 +150,7 @@ export const registerUser = async ({ fullName, email, password }) => {
     return data
   } catch (error) {
     throw new Error(
-      error.response?.data?.message || error.message || 'Register xato'
+      error.response?.data?.message || error.message || 'Login yoki parolni tog\'ri kiriting'
     )
   }
 }
@@ -168,6 +168,7 @@ export const signInWithGoogle = async () => {
       email: result.user.email || '',
       login: result.user.email || '',
       role: 'user',
+      img: result.user.photoURL || null,
     })
   } catch (error) {
     throw new Error(error.message || 'Google orqali xato')

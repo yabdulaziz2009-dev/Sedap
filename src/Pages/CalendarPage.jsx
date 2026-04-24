@@ -1,25 +1,12 @@
-// /**
-//  * Sedap — Full Functional Calendar Page
-//  * Vite + React
-//  *
-//  * Features:
-//  *  ✅ Month / Week / Day views
-//  *  ✅ Prev / Next / Today navigation per view
-//  *  ✅ Create event — modal form (+ New Schedule OR double-click on cell)
-//  *  ✅ Edit event — click any chip → modal pre-filled
-//  *  ✅ Delete event — button inside edit modal
-//  *  ✅ In-memory live store (swap saveEvent/deleteEvent with real fetch() for backend)
-//  *  ✅ 5 event colors with picker
-//  *  ✅ All-day toggle + timed events with start/end
-//  *  ✅ "+N more" overflow in month cells
-//  *  ✅ Selected-day panel in month view (shows all events for that day)
-//  *  ✅ Today highlight (green circle), Sunday red, active-day highlight
-//  *  ✅ Week view: all-day row + hourly slots
-//  *  ✅ Day view: full 24h timeline
-//  */
+import { useState, useCallback, useId, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  fetchEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+} from "../store/slices/calendarSlice";
 
-// import { useState, useCallback, useId } from "react";
-// import { useSelector } from "react-redux";
 
 // // ─── Color palette ────────────────────────────────────────────────────────────
 // const COLORS = {
@@ -618,37 +605,6 @@
  *  ✅ Week view: all-day row + hourly slots
  *  ✅ Day view: full 24h timeline
  */
-
-/**
- * Sedap — Full Functional Calendar Page
- * Vite + React + Redux Toolkit backend integration
- *
- * Features:
- *  ✅ Month / Week / Day views
- *  ✅ Prev / Next / Today navigation per view
- *  ✅ Create event — modal form (+ New Schedule OR double-click on cell)
- *  ✅ Edit event — click any chip → modal pre-filled
- *  ✅ Delete event — button inside edit modal
- *  ✅ Redux Toolkit store (calendarSlice) — fetchEvents / createEvent / updateEvent / deleteEvent
- *  ✅ Auto-fetch on mount + on month/year change
- *  ✅ SEED fallback if backend is unavailable
- *  ✅ 5 event colors with picker
- *  ✅ All-day toggle + timed events with start/end
- *  ✅ "+N more" overflow in month cells
- *  ✅ Selected-day panel in month view (shows all events for that day)
- *  ✅ Today highlight (green circle), Sunday red, active-day highlight
- *  ✅ Week view: all-day row + hourly slots
- *  ✅ Day view: full 24h timeline
- */
-
-import { useState, useCallback, useId, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import {
-  fetchEvents,
-  createEvent,
-  updateEvent,
-  deleteEvent,
-} from "../store/slices/calendarSlice";
 
 // ─── Color palette ────────────────────────────────────────────────────────────
 const COLORS = {

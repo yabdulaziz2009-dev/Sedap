@@ -7,8 +7,7 @@ const Cards = ({ food }) => {
 
 
   return (
-    <Link to={`/foods/${food.id}`}>
-          <div className='py-4'>
+    <div className='py-4'>
       <div className="w-[240px] h-[300px] bg-white rounded-2xl shadow-md p-4 text-center hover:shadow-lg transition dark:bg-slate-800 dark:shadow-slate-900">
 
         <div className="flex justify-center -mt-12">
@@ -39,7 +38,6 @@ const Cards = ({ food }) => {
         <p className="text-xs text-gray-500 mt-2 dark:text-slate-400">View</p>
       </div>
     </div>
-    </Link>
 
   )
 }

@@ -18,26 +18,19 @@ import Reviews from './Pages/Reviews'
 import Wallet from './Pages/Wallet'
 import Login from './Pages/Login'
 import Registr from './Pages/Registr'
+import Admin from './Pages/Admin'
 import { getSession } from './auth'
 import Customer from './Pages/Customer'
 
 const ProtectedRoute = ({ children }) => {
   const session = getSession()
-
-  if (!session) {
-    return <Navigate to="/login" replace />
-  }
-
+  if (!session) return <Navigate to="/login" replace />
   return children
 }
 
 const PublicOnlyRoute = ({ children }) => {
   const session = getSession()
-
-  if (session) {
-    return <Navigate to="/" replace />
-  }
-
+  if (session) return <Navigate to="/" replace />
   return children
 }
 
@@ -55,6 +48,14 @@ const router = createBrowserRouter([
     element: (
       <PublicOnlyRoute>
         <Login />
+      </PublicOnlyRoute>
+    ),
+  },
+  {
+    path: '/admin',
+    element: (
+      <PublicOnlyRoute>
+        <Admin />
       </PublicOnlyRoute>
     ),
   },
@@ -113,7 +114,9 @@ const router = createBrowserRouter([
           {
         path: 'customer/:id',
         element: <Customer/>,
+      
       },
+     
     ],
   },
   {

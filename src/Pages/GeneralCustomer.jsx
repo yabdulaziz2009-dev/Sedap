@@ -105,10 +105,10 @@ const GeneralCustomer = () => {
       {/* Header section */}
       <div className="flex justify-between items-end mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-1">General Customer</h1>
-          <p className="text-gray-500 text-sm">Here is your general customers list data</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-slate-100 mb-1">General Customer</h1>
+          <p className="text-gray-500 dark:text-slate-400 text-sm">Here is your general customers list data</p>
         </div>
-        <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
+        <button className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
           <LuListFilter className="text-[#00B074]" size={18} />
           Filter
           <FiChevronDown />
@@ -116,7 +116,7 @@ const GeneralCustomer = () => {
       </div>
 
       {/* Table Container */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
         <div className="w-full">
           <table className="w-full text-sm text-left relative">
             {/* Table Header */}
@@ -149,51 +149,51 @@ const GeneralCustomer = () => {
             <tbody>
               {currentItems.length === 0 ? (
                 <tr>
-                   <td colSpan="7" className="px-4 py-10 text-center text-gray-500">No records found.</td>
+                   <td colSpan="7" className="px-4 py-10 text-center text-gray-500 dark:text-slate-400">No records found.</td>
                 </tr>
               ) : null}
               {currentItems.map((customer, idx) => (
-                <tr 
-                  key={customer.id} 
-                  className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${idx === 0 ? 'bg-gray-50/50' : ''}`}
+                <tr
+                  key={customer.id}
+                  className={`border-b border-gray-50 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors ${idx === 0 ? 'bg-gray-50/50 dark:bg-slate-700/30' : ''}`}
                 >
-                  <td className="px-4 py-3 text-gray-500 font-medium">
+                  <td className="px-4 py-3 text-gray-500 dark:text-slate-400 font-medium">
                     {customer.id}
                   </td>
-                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                  <td className="px-4 py-3 text-gray-500 dark:text-slate-400 whitespace-nowrap">
                     {customer.joinDate}
                   </td>
-                  <td className="px-4 py-3 text-gray-800 font-medium">
+                  <td className="px-4 py-3 text-gray-800 dark:text-slate-200 font-medium">
                     {customer.name}
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
+                  <td className="px-4 py-3 text-gray-500 dark:text-slate-400">
                     <span className="line-clamp-2" title={customer.location}>{customer.location}</span>
                   </td>
-                  <td className="px-4 py-3 text-gray-800 font-medium">
+                  <td className="px-4 py-3 text-gray-800 dark:text-slate-200 font-medium">
                     {customer.spent}
                   </td>
-                  <td className="px-4 py-3 text-gray-800 font-medium">
+                  <td className="px-4 py-3 text-gray-800 dark:text-slate-200 font-medium">
                     {customer.lastOrder}
                   </td>
                   <td className="px-4 py-3 text-center relative">
-                    <button 
+                    <button
                       onClick={() => toggleDropdown(customer.id)}
-                      className="p-1 rounded-full hover:bg-gray-200 transition-colors text-gray-400 focus:outline-none"
+                      className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors text-gray-400 dark:text-slate-500 focus:outline-none"
                     >
                       <FiMoreHorizontal size={20} />
                     </button>
 
                     {/* Action Dropdown */}
                     {openDropdown === customer.id && (
-                      <div className="absolute right-8 top-10 w-32 bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-100 z-50 py-2 text-sm text-left transform transition-all animate-in fade-in zoom-in-95">
-                        <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700 transition-colors">
+                      <div className="absolute right-8 top-10 w-32 bg-white dark:bg-slate-700 rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-100 dark:border-slate-600 z-50 py-2 text-sm text-left transform transition-all animate-in fade-in zoom-in-95">
+                        <button className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 transition-colors">
                           View Detail
                         </button>
-                        <button className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700 transition-colors">
+                        <button className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 transition-colors">
                           Edit
                         </button>
-                        <button 
-                          className="w-full text-left px-4 py-2 hover:bg-red-50 hover:text-red-600 text-red-500 transition-colors"
+                        <button
+                          className="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600 text-red-500 transition-colors"
                           onClick={() => handleDelete(customer.id)}
                         >
                           Delete
@@ -208,38 +208,38 @@ const GeneralCustomer = () => {
         </div>
 
         {/* Footer info and pagination */}
-        <div className="px-6 py-6 border-t border-gray-50 flex flex-col md:flex-row items-center justify-between text-sm gap-4">
-          <p className="text-gray-500">
+        <div className="px-6 py-6 border-t border-gray-50 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between text-sm gap-4">
+          <p className="text-gray-500 dark:text-slate-400">
             Showing {currentItems.length > 0 ? indexOfFirstItem + 1 : 0} to {Math.min(indexOfLastItem, customers.length)} from {customers.length} data
           </p>
           <div className="flex items-center gap-1">
-            <button 
+            <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-600 text-gray-400 dark:text-slate-500 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-600 transition-colors bg-white dark:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="sr-only">Previous</span>
               &laquo;
             </button>
-            
+
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-               <button 
+               <button
                   key={page}
                   onClick={() => handlePageChange(page)}
                   className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
-                     currentPage === page 
-                        ? 'bg-[#2D9CDB]/10 text-[#2D9CDB] font-bold border border-transparent' 
-                        : 'border border-transparent text-gray-500 hover:bg-gray-50'
+                     currentPage === page
+                        ? 'bg-[#2D9CDB]/10 text-[#2D9CDB] font-bold border border-transparent'
+                        : 'border border-transparent text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700'
                   }`}
                >
                   {page}
                </button>
             ))}
 
-            <button 
+            <button
                onClick={() => handlePageChange(currentPage + 1)}
                disabled={currentPage === totalPages || totalPages === 0}
-               className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+               className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-600 text-gray-400 dark:text-slate-500 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-gray-600 transition-colors bg-white dark:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="sr-only">Next</span>
               &raquo;
@@ -249,8 +249,8 @@ const GeneralCustomer = () => {
       </div>
     {/* Click outside listener */}
     {openDropdown && (
-      <div 
-        className="fixed inset-0 z-40 bg-transparent" 
+      <div
+        className="fixed inset-0 z-40 bg-transparent"
         onClick={() => setOpenDropdown(null)}
       ></div>
     )}
