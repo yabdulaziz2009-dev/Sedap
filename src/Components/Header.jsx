@@ -1,56 +1,78 @@
-import React from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { toggleTheme } from '../store/slices/theme'
-import { HiMagnifyingGlass, HiBell, HiCog, HiUserCircle, HiSun, HiMoon } from 'react-icons/hi2'
+import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { toggleTheme } from '../store/slices/theme';
+import { FiSearch, FiBell, FiMessageSquare, FiGift, FiSettings, FiSun, FiMoon } from 'react-icons/fi';
 
 const Header = () => {
-  const dispatch = useDispatch()
-  const { mode } = useSelector((state) => state.theme)
+  const dispatch = useDispatch();
+  const { mode } = useSelector((state) => state.theme);
 
   return (
-    <header className="bg-white border-b shadow-sm dark:bg-slate-800 dark:border-slate-700">
-      <div className="max-w-[1380px] mx-auto flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative flex items-center rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 shadow-sm shadow-slate-100 dark:border-slate-600 dark:bg-slate-700">
-            <HiMagnifyingGlass className="h-5 w-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search here"
-              className="ml-3 w-72 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100"
-            />
-          </div>
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300">
-            <div className="font-semibold">Filter Periode</div>
-            <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">17 April 2026 - 23 May 2026</div>
-          </div>
+    <header className="bg-[#f3f4f6] dark:bg-slate-800 flex items-center justify-between px-8 py-4 sticky top-0 z-20">
+      {/* Search Bar */}
+      <div className="relative w-full max-w-md hidden md:block text-gray-400 bg-white dark:bg-slate-700 rounded-xl">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <FiSearch className="text-gray-400" />
         </div>
+        <input
+          type="text"
+          className="bg-transparent border-none text-gray-800 dark:text-slate-100 text-sm rounded-xl block w-full pl-10 p-3 h-12 outline-none"
+          placeholder="Search here"
+        />
+      </div>
 
+      {/* Right Section */}
+      <div className="flex items-center gap-6 ml-auto">
         <div className="flex items-center gap-4">
           <button
             onClick={() => dispatch(toggleTheme())}
-            className="rounded-2xl bg-slate-50 p-3 text-slate-600 shadow-sm shadow-slate-100 hover:bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+            className="p-3 rounded-xl bg-gray-200/60 dark:bg-slate-700 text-gray-500 dark:text-slate-300 hover:bg-gray-300/60 transition-colors"
           >
-            {mode === 'dark' ? <HiSun className="h-5 w-5" /> : <HiMoon className="h-5 w-5" />}
+            {mode === 'dark' ? <FiSun size={20} /> : <FiMoon size={20} />}
           </button>
-          <button className="rounded-2xl bg-slate-50 p-3 text-slate-600 shadow-sm shadow-slate-100 hover:bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600">
-            <HiBell className="h-5 w-5" />
+
+          <button className="relative p-3 rounded-xl bg-[#2D9CDB]/10 text-[#2D9CDB] hover:bg-[#2D9CDB]/20 transition-colors">
+            <FiBell size={20} />
+            <span className="absolute top-0 right-0 transform translate-x-1 -translate-y-1 bg-[#2D9CDB] border-2 border-[#f3f4f6] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center justify-center">
+              11
+            </span>
           </button>
-          <button className="rounded-2xl bg-slate-50 p-3 text-slate-600 shadow-sm shadow-slate-100 hover:bg-slate-100 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600">
-            <HiCog className="h-5 w-5" />
+
+          <button className="relative p-3 rounded-xl bg-[#2D9CDB]/10 text-[#2D9CDB] hover:bg-[#2D9CDB]/20 transition-colors">
+            <FiMessageSquare size={20} />
+            <span className="absolute top-0 right-0 transform translate-x-1 -translate-y-1 bg-[#2D9CDB] border-2 border-[#f3f4f6] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center justify-center">
+              2
+            </span>
           </button>
-          <div className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-2 dark:border-slate-600 dark:bg-slate-700">
-            <div className="rounded-full bg-slate-200 p-2 text-slate-700 dark:bg-slate-600 dark:text-slate-300">
-              <HiUserCircle className="h-6 w-6" />
-            </div>
-            <div className="text-sm text-slate-700 dark:text-slate-200">
-              <div className="font-semibold">Hello, Samanth</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">Admin</div>
-            </div>
+
+          <button className="p-3 rounded-xl bg-gray-200/60 dark:bg-slate-700 text-gray-500 dark:text-slate-300 hover:bg-gray-300/60 transition-colors">
+            <FiGift size={20} />
+          </button>
+
+          <button className="relative p-3 rounded-xl bg-[#FF5B5B]/10 text-[#FF5B5B] hover:bg-[#FF5B5B]/20 transition-colors">
+            <FiSettings size={20} />
+            <span className="absolute top-1 right-1.5 w-2 h-2 bg-[#FF5B5B] border-[1.5px] border-[#f3f4f6] rounded-full"></span>
+          </button>
+        </div>
+
+        <div className="h-8 w-px bg-gray-200 dark:bg-slate-600"></div>
+
+        {/* User Profile */}
+        <div className="flex items-center gap-3 cursor-pointer">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm text-gray-500 dark:text-slate-400">Hello, <span className="font-semibold text-gray-800 dark:text-slate-100">Samantha</span></p>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm overflow-hidden flex-shrink-0">
+            <img
+              src="https://randomuser.me/api/portraits/women/44.jpg"
+              alt="User Avatar"
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

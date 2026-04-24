@@ -10,10 +10,16 @@ import { Provider } from 'react-redux'
 import store from './store/store'
 import CalendarPage from './Pages/CalendarPage'
 import Xchat from './Pages/Xchat'
-import Customer from './Pages/Customer'
+import GeneralCustomer from './Pages/GeneralCustomer'
+import Orders from './Pages/Orders'
+import OrderDetail from './Pages/OrderDetail'
+import Analytics from './Pages/Analytics'
+import Reviews from './Pages/Reviews'
+import Wallet from './Pages/Wallet'
 import Login from './Pages/Login'
 import Registr from './Pages/Registr'
 import { getSession } from './auth'
+import Customer from './Pages/Customer'
 
 const ProtectedRoute = ({ children }) => {
   const session = getSession()
@@ -77,25 +83,37 @@ const router = createBrowserRouter([
         element: <CalendarPage />,
       },
       {
-        path: 'foods',
-        element: <Foods />,
+        path: 'xchat',
+        element: <Xchat />,
       },
       {
-        path: 'foods/:id',
-        element: <FoodDetail />,
-      },
-        {
-        path: '/calendar',
-        element: <CalendarPage />,
+        path: 'customers',
+        element: <GeneralCustomer />,
       },
       {
-        path: '/xchat',
-        element: <Xchat/>
+        path: 'orders',
+        element: <Orders />,
       },
-        {
-        path: '/customers',
-        element: <Customer/>
-      }
+      {
+        path: 'orders/detail',
+        element: <OrderDetail />,
+      },
+      {
+        path: 'analytics',
+        element: <Analytics />,
+      },
+      {
+        path: 'reviews',
+        element: <Reviews />,
+      },
+      {
+        path: 'wallet',
+        element: <Wallet />,
+      },
+          {
+        path: 'customer/:id',
+        element: <Customer/>,
+      },
     ],
   },
   {

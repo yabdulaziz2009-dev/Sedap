@@ -5,11 +5,9 @@ import { auth, googleProvider } from './firebase'
 const API_URL = import.meta.env.VITE_API_URL
 
 const TOKEN_KEY = 'sedap-token'
-const ROLE_KEY = 'sedap-role'   
+const ROLE_KEY = 'sedap-role'
 const SESSION_KEY = 'sedap-session'
 
-const DEFAULT_TOKEN =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZTBmMjE0NTczNjA1ZjIxOGUzNzM2ZCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3NjQyNDMxMCwiZXhwIjoxNzc2NTEwNzEwfQ.soY4hpzji87D4EUVB4_X-l3s6bmi9Zd1lM8kZD2yD5c'
 
 const api = axios.create({
   baseURL: API_URL,
@@ -83,12 +81,7 @@ const createSessionFromToken = (token, fallbackUser = {}) => {
 }
 
 export const initializeAuth = () => {
-  const savedToken = localStorage.getItem(TOKEN_KEY)
-  const token = savedToken || DEFAULT_TOKEN
-
-  if (!savedToken && DEFAULT_TOKEN) {
-    localStorage.setItem(TOKEN_KEY, DEFAULT_TOKEN)
-  }
+  const token = localStorage.getItem(TOKEN_KEY)
 
   if (!token) return null
 
@@ -209,3 +202,4 @@ export const getUserRole = () => localStorage.getItem(ROLE_KEY)
 export { TOKEN_KEY, SESSION_KEY, ROLE_KEY }
 
 export default api
+

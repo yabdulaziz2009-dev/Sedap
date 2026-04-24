@@ -1,234 +1,274 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Bar } from "recharts";
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
+  BarChart,
+  XAxis,
+  YAxis,
   Tooltip,
-} from "chart.js";
-import { Bar } from "react-chartjs-2";
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
+// ─── DATA ────────────────────────────────────────────────────────────────────
 
-const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-const datasets = {
+const FOOD_DATA = {
   monthly: [
-    { label: "Spaghetti", data: [420, 310, 490, 370, 280, 360, 200], backgroundColor: "#62b8e8", borderRadius: 5, borderSkipped: false },
-    { label: "Pizza",     data: [220, 180, 260, 170, 140, 190, 120], backgroundColor: "#e87272", borderRadius: 5, borderSkipped: false },
-    { label: "Burger",    data: [150, 200, 180, 280, 390, 260, 763], backgroundColor: "#4caf82", borderRadius: 5, borderSkipped: false },
-    { label: "Sprite",    data: [310, 420, 340, 610, 310, 440, 280], backgroundColor: "#f5c542", borderRadius: 5, borderSkipped: false },
+    { emoji: "🍝", name: "Medium Spicy Spaghetti Italiano", tag: "SPAGHETTI", meta: "Serves 4 Persons · 24 mins", price: "$12.56" },
+    { emoji: "🍕", name: "Crispy Thin Crust Margherita", tag: "PIZZA", meta: "Serves 2 Persons · 18 mins", price: "$14.20" },
+    { emoji: "🍔", name: "Classic Double Smash Burger", tag: "BURGER", meta: "Serves 1 Person · 12 mins", price: "$10.99" },
+    { emoji: "🥗", name: "Garden Fresh Caesar Salad", tag: "SALAD", meta: "Serves 2 Persons · 10 mins", price: "$8.75" },
+    { emoji: "🍜", name: "Spicy Tom Yum Noodle Soup", tag: "NOODLES", meta: "Serves 2 Persons · 20 mins", price: "$11.30" },
   ],
   weekly: [
-    { label: "Spaghetti", data: [120, 90, 150, 80,  60,  110, 50],  backgroundColor: "#62b8e8", borderRadius: 5, borderSkipped: false },
-    { label: "Pizza",     data: [60,  50, 70,  40,  35,  55,  30],  backgroundColor: "#e87272", borderRadius: 5, borderSkipped: false },
-    { label: "Burger",    data: [40,  55, 45,  80,  100, 70,  200], backgroundColor: "#4caf82", borderRadius: 5, borderSkipped: false },
-    { label: "Sprite",    data: [80,  110,90,  160, 85,  120, 70],  backgroundColor: "#f5c542", borderRadius: 5, borderSkipped: false },
+    { emoji: "🍔", name: "Classic Double Smash Burger", tag: "BURGER", meta: "Serves 1 Person · 12 mins", price: "$10.99" },
+    { emoji: "🍝", name: "Medium Spicy Spaghetti Italiano", tag: "SPAGHETTI", meta: "Serves 4 Persons · 24 mins", price: "$12.56" },
+    { emoji: "🥤", name: "Fresh Mango Sprite Smoothie", tag: "DRINK", meta: "1 Cup · 5 mins", price: "$5.50" },
   ],
   daily: [
-    { label: "Spaghetti", data: [18, 12, 22, 10, 8,  14, 6],  backgroundColor: "#62b8e8", borderRadius: 5, borderSkipped: false },
-    { label: "Pizza",     data: [8,  7,  10, 5,    { label: "Sprite",    data: [11, 16, 13, 22, 12, 17, 9],  backgroundColor: "#f5c542", borderRadius: 5, borderSkipped: false },
-  4,  8,  3],  backgroundColor: "#e87272", borderRadius: 5, borderSkipped: false },
-    { label: "Burger",    data: [5,  8,  6,  12, 14, 10, 28], backgroundColor: "#4caf82", borderRadius: 5, borderSkipped: false },
+    { emoji: "☕", name: "Morning Espresso Double Shot", tag: "DRINK", meta: "1 Cup · 3 mins", price: "$4.20" },
+    { emoji: "🥐", name: "Butter Croissant with Jam", tag: "PASTRY", meta: "Serves 1 · 8 mins", price: "$3.90" },
   ],
 };
 
-const foodItems = [
-  { emoji: "🍝", bg: "#fef3c7" },
-  { emoji: "🍜", bg: "#f3f4f6" },
-  { emoji: "🫕", bg: "#fef9c3" },
-  { emoji: "🍛", bg: "#fce7f3" },
-  { emoji: "🥗", bg: "#dcfce7" },
-];
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const legendItems = [
-  { color: "#62b8e8", label: "Spaghetti (22%)", count: 69  },
-  { color: "#4caf82", label: "Burger (27%)",    count: 763 },
-  { color: "#e87272", label: "Pizza (11%)",     count: 321 },
-  { color: "#f5c542", label: "Sprite (15%)",    count: 154 },
-];
-
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: {
-    x: {
-      grid: { display: false },
-      ticks: { font: { size: 10 }, color: "#9ca3af", maxRotation: 0 },
-    },
-    y: {
-      grid: { color: "rgba(0,0,0,0.04)" },
-      ticks: { font: { size: 10 }, color: "#9ca3af" },
-      beginAtZero: true,
-    },
-  },
+const CHART_DATA = {
+  monthly: DAYS.map((day, i) => ({
+    day,
+    Spaghetti: [420, 310, 490, 370, 280, 360, 200][i],
+    Pizza:     [220, 180, 260, 170, 140, 190, 120][i],
+    Burger:    [150, 200, 180, 280, 390, 260, 763][i],
+    Sprite:    [310, 420, 340, 610, 310, 440, 280][i],
+  })),
+  weekly: DAYS.map((day, i) => ({
+    day,
+    Spaghetti: [80,  60,  90,  70,  50,  65,  40][i],
+    Pizza:     [45,  35,  55,  30,  25,  40,  20][i],
+    Burger:    [30,  40,  35,  60,  80,  50, 150][i],
+    Sprite:    [60,  80,  65, 120,  60,  85,  55][i],
+  })),
+  daily: DAYS.map((day, i) => ({
+    day,
+    Spaghetti: [12,  8, 14, 10,  7,  9,  5][i],
+    Pizza:     [ 6,  5,  8,  4,  3,  5,  2][i],
+    Burger:    [ 4,  6,  5,  8, 11,  7, 22][i],
+    Sprite:    [ 9, 12, 10, 18,  9, 12,  8][i],
+  })),
 };
 
-function TabGroup({ active, onChange, options }) {
+const LEGEND = {
+  monthly: [
+    { key: "Spaghetti", pct: 22, count: 69,  color: "#3b82f6" },
+    { key: "Pizza",     pct: 11, count: 321, color: "#ef4444" },
+    { key: "Burger",    pct: 27, count: 763, color: "#16a34a" },
+    { key: "Sprite",    pct: 15, count: 154, color: "#eab308" },
+  ],
+  weekly: [
+    { key: "Spaghetti", pct:  8, count: 18,  color: "#3b82f6" },
+    { key: "Pizza",     pct: 14, count: 82,  color: "#ef4444" },
+    { key: "Burger",    pct: 32, count: 195, color: "#16a34a" },
+    { key: "Sprite",    pct: 11, count: 38,  color: "#eab308" },
+  ],
+  daily: [
+    { key: "Spaghetti", pct:  5, count: 3,   color: "#3b82f6" },
+    { key: "Pizza",     pct:  9, count: 12,  color: "#ef4444" },
+    { key: "Burger",    pct: 18, count: 28,  color: "#16a34a" },
+    { key: "Sprite",    pct:  7, count: 5,   color: "#eab308" },
+  ],
+};
+
+const STATS = [
+  { label: "Total Orders", value: "1,284", change: "+12.5%", up: true },
+  { label: "Total Spent",  value: "$3,842", change: "+8.3%",  up: true },
+  { label: "Avg Order",    value: "$24.6",  change: "-2.1%",  up: false },
+  { label: "Member Since", value: "2020",   change: "4 years", up: null },
+];
+
+// ─── SMALL COMPONENTS ────────────────────────────────────────────────────────
+
+function Tabs({ active, onChange, options }) {
   return (
     <div className="flex gap-1">
-      {options.map((t) => (
+      {options.map((opt) => (
         <button
-          key={t}
-          onClick={() => onChange(t.toLowerCase())}
-          className={`px-3 py-1 rounded-full text-xs border transition-all ${
-            active === t.toLowerCase()
+          key={opt}
+          onClick={() => onChange(opt.toLowerCase())}
+          className={`px-3 py-1 rounded-full text-xs border transition-all font-medium ${
+            active === opt.toLowerCase()
               ? "bg-green-600 text-white border-green-600"
-              : "bg-transparent text-gray-500 border-gray-300 hover:border-gray-400"
+              : "bg-transparent text-gray-400 border-gray-200 hover:border-green-400 hover:text-green-600"
           }`}
         >
-          {t}
+          {opt}
         </button>
       ))}
     </div>
   );
 }
 
-export default function CustomerDashboard() {
-  const [period, setPeriod] = useState("monthly");
-  const [foodTab, setFoodTab] = useState("monthly");
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-xl">
+      <p className="font-semibold mb-1">{label}</p>
+      {payload.map((p) => (
+        <div key={p.name} className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full inline-block" style={{ background: p.fill }} />
+          <span className="text-gray-300">{p.name}:</span>
+          <span className="font-bold">{p.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
-  const chartData = {
-    labels: days,
-    datasets: datasets[period],
-  };
+// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
+
+export default function CustomerDashboard() {
+  const [orderPeriod, setOrderPeriod] = useState("monthly");
+  const [chartPeriod, setChartPeriod] = useState("monthly");
 
   return (
+    <div className="min-h-screen bg-gray-100 p-5 font-sans">
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap'); body{font-family:'Plus Jakarta Sans',sans-serif;}`}</style>
 
-    <div className="bg-gray-100 min-h-screen p-5 font-sans">
       {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-lg font-medium text-gray-800">Customer detail</h1>
-        <p className="text-sm text-gray-500">Here your customer detail profile</p>
+      <div className="mb-5">
+        <h1 className="text-xl font-bold text-gray-900">Customer Detail</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Here your customer detail profile</p>
       </div>
 
-      {/* Top row */}
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        {/* Profile card */}
-        <div className="col-span-2 bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-5">
-          <div className="w-16 h-16 rounded-xl bg-gray-200 flex items-center justify-center text-2xl font-medium text-gray-500 shrink-0">
+      {/* TOP ROW */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+
+        {/* Profile Card */}
+        <div className="lg:col-span-1 bg-white rounded-2xl border border-gray-100 p-5 flex items-start gap-4 shadow-sm">
+          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-green-500 to-teal-400 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow">
             EY
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-1">
-              <span className="text-lg font-medium text-gray-800">Eren Yeager</span>
-              <span className="bg-green-100 text-green-800 text-xs px-3 py-0.5 rounded-full font-medium">
-                UX Designer
-              </span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-base font-bold text-gray-900">Eren Yeager</span>
+              <span className="bg-green-50 text-green-700 text-xs px-2.5 py-0.5 rounded-full font-semibold">UX Designer</span>
             </div>
-            <p className="text-xs text-gray-400 mb-3">
-              St. Kings Road 57th, Garden Hills, Chelsea · London
-            </p>
-            <div className="flex gap-5 flex-wrap">
-              <span className="text-xs text-gray-500 flex items-center gap-1">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
-                  <rect x="2" y="4" width="20" height="16" rx="2" />
-                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                </svg>
-                eren.yeager@mail.co.id
-              </span>
-              <span className="text-xs text-gray-500 flex items-center gap-1">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.7h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8 10.09a16 16 0 0 0 6 6l.86-.86a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 17.5z" />
-                </svg>
-                +012 345 6789
-              </span>
-              <span className="text-xs text-gray-500 flex items-center gap-1">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#e87272" strokeWidth="2">
-                  <rect x="2" y="7" width="20" height="14" rx="2" />
-                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-                </svg>
-                Highspeed Studios
-              </span>
+            <p className="text-xs text-gray-400 mt-1">St. Kings Road 57th, Garden Hills, Chelsea – London</p>
+            <div className="mt-3 space-y-1.5">
+              {[
+                { icon: "✉️", text: "eren.yeager@mail.co.id" },
+                { icon: "📞", text: "+012 345 6789" },
+                { icon: "🏢", text: "Highspeed Studios" },
+              ].map(({ icon, text }) => (
+                <div key={text} className="flex items-center gap-2 text-xs text-gray-500">
+                  <span>{icon}</span><span>{text}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:border-green-400 hover:text-green-600 transition-all text-sm">ℹ</button>
+              <button className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:border-green-400 hover:text-green-600 transition-all text-sm">✎</button>
             </div>
           </div>
         </div>
 
-        {/* Balance card */}
-        <div className="bg-green-600 rounded-2xl p-5 text-white">
-          <p className="text-xs opacity-70 mb-1">Your balance</p>
-          <p className="text-3xl font-medium mb-3">$ 9,425</p>
-          <p className="text-xs opacity-60 tracking-widest mb-3">2451 **** **** ****</p>
-          <div className="flex justify-between items-center border-t border-white/20 pt-3">
-            <div>
-              <p className="text-xs opacity-60">Name</p>
-              <p className="text-sm font-medium">Eren Yeager</p>
-            </div>
-            <p className="text-xs opacity-60">02/21</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom row */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Most ordered food */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <p className="text-sm font-medium text-gray-800">Most ordered food</p>
-              <p className="text-xs text-gray-400">Lorem ipsum dolor sit amet</p>
-            </div>
-            <TabGroup
-              active={foodTab}
-              onChange={setFoodTab}
-              options={["Monthly", "Weekly", "Daily"]}
-            />
-          </div>
-          <div className="divide-y divide-gray-50">
-            {foodItems.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 py-2.5">
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0"
-                  style={{ background: item.bg }}
-                >
-                  {item.emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">
-                    Meidum spicy spagheti italiano
-                  </p>
-                  <p className="text-xs text-green-600 font-medium">SPAGETHI</p>
-                  <p className="text-xs text-gray-400">Serves for 4 person · 24 mins</p>
-                </div>
-                <p className="text-sm font-medium text-gray-700 shrink-0">$12.56</p>
+        {/* Stats Card */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <p className="text-sm font-bold text-gray-900 mb-3">Activity Overview</p>
+          <div className="grid grid-cols-2 gap-3">
+            {STATS.map(({ label, value, change, up }) => (
+              <div key={label} className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400">{label}</p>
+                <p className="text-xl font-bold text-gray-900 mt-0.5">{value}</p>
+                <p className={`text-xs mt-0.5 font-medium ${up === true ? "text-green-600" : up === false ? "text-red-500" : "text-gray-400"}`}>
+                  {up === true ? "↑" : up === false ? "↓" : ""} {change}
+                </p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Most liked food */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <p className="text-sm font-medium text-gray-800">Most liked food</p>
-              <p className="text-xs text-gray-400">Lorem ipsum dolor sit amet</p>
+        {/* Balance Card */}
+        <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-3">
+              <p className="text-xs opacity-70">Your Balance</p>
+              <span className="text-white/50 text-lg leading-none cursor-pointer">•••</span>
             </div>
-            <TabGroup
-              active={period}
-              onChange={setPeriod}
-              options={["Monthly", "Weekly", "Daily"]}
-            />
+            <p className="text-4xl font-bold tracking-tight">$ 9,425</p>
+            <p className="text-xs opacity-60 mt-3 tracking-widest">2451 **** **** ****</p>
+            <p className="text-xs opacity-50 mt-0.5">Exp: 02/21</p>
+            <div className="flex justify-between items-end mt-5">
+              <div>
+                <p className="text-xs opacity-60">Name</p>
+                <p className="font-semibold text-sm">Eren Yeager</p>
+              </div>
+              <span className="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-lg backdrop-blur-sm">Mastercard</span>
+            </div>
           </div>
+        </div>
+      </div>
 
-          <div className="relative h-52">
-            <Bar data={chartData} options={chartOptions} />
+      {/* BOTTOM ROW */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        {/* Most Ordered Food */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-bold text-gray-900">Most Ordered Food</p>
+            <Tabs active={orderPeriod} onChange={setOrderPeriod} options={["Monthly", "Weekly", "Daily"]} />
           </div>
-
-          <div className="grid grid-cols-2 gap-2 mt-3"> 
-            {legendItems.map((item) => (
+          <p className="text-xs text-gray-400 mb-4">Lorem ipsum dolor sit amet, consectetur</p>
+          <div className="space-y-2">
+            {FOOD_DATA[orderPeriod].map((food, i) => (
               <div
-                key={item.label}
-                className="flex items-center justify-between px-3 py-1.5 bg-gray-50 rounded-lg"
+                key={i}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group"
               >
-                <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <span
-                    className="w-2.5 h-2.5 rounded-sm inline-block"
-                    style={{ background: item.color }}
-                  />
-                  {item.label}
-                </span>
-                <span className="text-sm font-medium text-gray-700">{item.count}</span>
+                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
+                  {food.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{food.name}</p>
+                  <p className="text-xs text-green-600 font-bold">{food.tag}</p>
+                  <p className="text-xs text-gray-400">{food.meta}</p>
+                </div>
+                <p className="text-sm font-bold text-gray-900 flex-shrink-0">{food.price}</p>
+                <span className="text-gray-300 group-hover:text-gray-500 transition-colors">⋯</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Most Liked Food Chart */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-bold text-gray-900">Most Liked Food</p>
+            <Tabs active={chartPeriod} onChange={setChartPeriod} options={["Monthly", "Weekly", "Daily"]} />
+          </div>
+          <p className="text-xs text-gray-400 mb-3">Lorem ipsum dolor sit amet, consectetur</p>
+
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={CHART_DATA[chartPeriod]} barCategoryGap="25%" barGap={2}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+              <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0,0,0,0.04)" }} />
+              <Bar dataKey="Spaghetti" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Pizza"     fill="#ef4444" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Burger"    fill="#16a34a" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Sprite"    fill="#eab308" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            {LEGEND[chartPeriod].map(({ key, pct, count, color }) => (
+              <div key={key} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                  <span className="text-xs text-gray-500">{key} ({pct}%)</span>
+                </div>
+                <span className="text-sm font-bold text-gray-900">{count}</span>
               </div>
             ))}
           </div>
