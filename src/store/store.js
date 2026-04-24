@@ -3,8 +3,8 @@ import food from './slices/Food'
 import theme from './slices/theme'
 import start from './slices/start'
 import calendar from './slices/calendarSlice'
-import reviews from './slices/Reviews' // Предполагаю, что Reviews.js находится в slices
-import profile from './profileSlice' // Исправленный путь
+import reviews from './slices/Reviews'
+import profile from './profileSlice'
 
 const store = configureStore({
   reducer: {
