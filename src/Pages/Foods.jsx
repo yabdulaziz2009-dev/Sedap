@@ -1,8 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════
 //  Foods.jsx  —  Restaurant Admin · Food Management Page
-//  FIX: multipart/form-data (FormData) for POST + PUT
-//  FIX: SalesChart emojis removed, null-safe canvas ref
-//  FIX: ingredients + seasons JSON.stringify for FormData
 // ═══════════════════════════════════════════════════════════════════
 
 import { useEffect, useState, useRef } from "react";
@@ -15,6 +12,7 @@ import Chart from "chart.js/auto";
 const BASE = import.meta.env.VITE_API_URL || "https://sedab-backend.onrender.com/api";
 const PAGE_LIMIT = 10;
 const CATEGORY_ID = "69e0f565573605f218e3736e";
+const VIEW_STORAGE_KEY = "sedab-foods-view";
 
 const MONTHS = [
   "January","February","March","April","May","June",
@@ -22,10 +20,10 @@ const MONTHS = [
 ];
 
 const SEASONS = [
-  { label: "Spring", text: "Bahor" },
-  { label: "Summer", text: "Yoz" },
-  { label: "Autumn", text: "Kuz" },
-  { label: "Winter", text: "Qish" },
+  { label: "Spring", text: "Spring" },
+  { label: "Summer", text: "Summer" },
+  { label: "Autumn", text: "Autumn" },
+  { label: "Winter", text: "Winter" },
 ];
 
 const CHART_COLORS = [
@@ -33,21 +31,9 @@ const CHART_COLORS = [
   "#ef4444","#8b5cf6","#ec4899","#06b6d4",
 ];
 
-// ─── Sales data (no emojis in labels) ────────────────────────────
-const SALES_DATA = {
-  monthly: {
-    labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
-    ovqat:    [180,220,195,260,310,285,320,298,275,340,360,420],
-    ichimlik: [95,110,88,145,190,230,280,265,195,150,120,160],
-    snek:     [45,55,48,72,85,78,90,82,68,95,105,130],
-  },
-  weekly: {
-    labels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
-    ovqat:    [42,38,51,55,72,88,65],
-    ichimlik: [28,22,35,40,58,70,52],
-    snek:     [15,12,18,22,35,42,30],
-  },
-};
+const SUBCATEGORIES = ["Food", "Snack", "Drinks", "Sweets"];
+
+
 
 // ─── Dark mode hook ───────────────────────────────────────────────
 function useDark() {
@@ -109,6 +95,11 @@ const Icon = {
       <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
     </svg>
   ),
+  Filter: () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+    </svg>
+  ),
   Sun: () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="5"/>
@@ -132,6 +123,11 @@ const Icon = {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
       <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+  ),
+  ChevronDown: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
     </svg>
   ),
 };
@@ -186,13 +182,14 @@ function ActionBtn({ variant, title, onClick, children }) {
     green: "bg-green-100 text-green-500 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400",
     amber: "bg-amber-100 text-amber-500 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400",
     red:   "bg-red-100   text-red-400   hover:bg-red-200   dark:bg-red-900/30   dark:text-red-400",
+    blue:  "bg-blue-100  text-blue-500  hover:bg-blue-200  dark:bg-blue-900/30  dark:text-blue-400",
   };
   return (
     <button
       type="button"
       title={title}
       onClick={onClick}
-      className={`w-9 h-9 flex items-center justify-center rounded-full transition ${colors[variant]}`}
+      className={`w-9 h-9 flex items-center justify-center rounded-full transition ${colors[variant] || colors.green}`}
     >
       {children}
     </button>
@@ -260,144 +257,10 @@ function FoodImage({ src, alt, className }) {
   );
 }
 
-// ─── Sales Chart — FIX: no emojis, null-safe canvas ──────────────
-function SalesChart() {
-  const canvasRef = useRef(null);
-  const chartRef  = useRef(null);
-  const [period, setPeriod] = useState("monthly");
+// ─── Sales Chart ──────────────────────────────────────────────────
 
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    const ctx = canvasRef.current.getContext("2d");
-    const d   = SALES_DATA[period];
-    const isDark = document.documentElement.classList.contains("dark");
 
-    if (chartRef.current) {
-      chartRef.current.destroy();
-      chartRef.current = null;
-    }
-
-    chartRef.current = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: d.labels,
-        datasets: [
-          {
-            label: "Ovqatlar",
-            data: d.ovqat,
-            backgroundColor: "rgba(34,197,94,0.85)",
-            borderRadius: 6,
-            borderSkipped: false,
-          },
-          {
-            label: "Ichimliklar",
-            data: d.ichimlik,
-            backgroundColor: "rgba(59,130,246,0.85)",
-            borderRadius: 6,
-            borderSkipped: false,
-          },
-          {
-            label: "Sneklar",
-            data: d.snek,
-            backgroundColor: "rgba(245,158,11,0.85)",
-            borderRadius: 6,
-            borderSkipped: false,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: "index", intersect: false },
-        plugins: {
-          legend: {
-            display: true,
-            position: "top",
-            labels: {
-              font: { size: 11, family: "inherit" },
-              color: isDark ? "#94a3b8" : "#6b7280",
-              padding: 16,
-              usePointStyle: true,
-              pointStyleWidth: 8,
-            },
-          },
-          tooltip: {
-            backgroundColor: isDark ? "#1e293b" : "#fff",
-            borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
-            borderWidth: 1,
-            titleColor: isDark ? "#f1f5f9" : "#111827",
-            bodyColor: isDark ? "#94a3b8" : "#6b7280",
-            padding: 12,
-            callbacks: {
-              label: (item) => ` ${item.dataset.label}: ${item.raw} dona`,
-            },
-          },
-        },
-        scales: {
-          x: {
-            grid: { display: false },
-            border: { display: false },
-            ticks: { color: "#9ca3af", font: { size: 11 } },
-          },
-          y: {
-            grid: { color: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", drawTicks: false },
-            border: { display: false },
-            ticks: {
-              color: "#9ca3af",
-              font: { size: 11 },
-              padding: 8,
-              callback: (v) => v + " ta",
-            },
-          },
-        },
-      },
-    });
-
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.destroy();
-        chartRef.current = null;
-      }
-    };
-  }, [period]);
-
-  return (
-    <div>
-
-    {/* <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h2 className="text-sm font-bold text-gray-900 dark:text-slate-100">Sotuv statistikasi</h2>
-          <p className="text-[11px] text-gray-400 mt-0.5">Kategoriyalar boyicha sotuv</p>
-        </div>
-        <div className="flex gap-1 bg-gray-50 dark:bg-slate-700/50 p-1 rounded-xl">
-          {[
-            { key: "monthly", label: "Oylik" },
-            { key: "weekly",  label: "Haftalik" },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setPeriod(key)}
-              className={`text-[11px] px-3 py-1.5 rounded-lg font-medium transition ${
-                period === key
-                  ? "bg-green-500 text-white shadow-sm"
-                  : "text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div style={{ height: 260 }}>
-        <canvas ref={canvasRef} />
-      </div>
-    </div> */}
-    </div>
-  );
-}
-
-// ─── Menu Comparison (donut charts) ──────────────────────────────
+// ─── Menu Comparison (real subcategories) ────────────────────────
 function MiniDonut({ pct, color, label, count }) {
   const r    = 38;
   const circ = 2 * Math.PI * r;
@@ -405,35 +268,36 @@ function MiniDonut({ pct, color, label, count }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <svg width="100" height="100" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r={r} fill="none" stroke="#e5e7eb" strokeWidth="14"
-          className="dark:stroke-slate-700" />
-        <circle cx="50" cy="50" r={r} fill="none"
-          stroke={color} strokeWidth="14"
-          strokeDasharray={`${dash} ${circ - dash}`}
-          strokeDashoffset={circ * 0.25}
-          strokeLinecap="round"
-        />
-        <text x="50" y="46" textAnchor="middle" fontSize="13" fontWeight="700" fill={color}>
-          {pct}%
-        </text>
+        <circle cx="50" cy="50" r={r} fill="none" stroke="#e5e7eb" strokeWidth="14" className="dark:stroke-slate-700" />
+        <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="14"
+          strokeDasharray={`${dash} ${circ - dash}`} strokeDashoffset={circ * 0.25} strokeLinecap="round" />
+        <text x="50" y="46" textAnchor="middle" fontSize="13" fontWeight="700" fill={color}>{pct}%</text>
         <text x="50" y="60" textAnchor="middle" fontSize="8" fill="#9ca3af">of menu</text>
       </svg>
-      <p className="text-xs font-semibold text-gray-700 dark:text-slate-200 capitalize">{label}</p>
+      <p className="text-xs font-semibold text-gray-700 dark:text-slate-200">{label}</p>
       <p className="text-[10px] text-gray-400">{count} items</p>
     </div>
   );
 }
 
 function MenuComparison({ foods }) {
+  // Group by subcategory (real backend field)
   const groups = (foods ?? []).reduce((acc, f) => {
-    const key = (f.subcategory || f.category?.name || "other").toLowerCase();
+    const key = f.subcategory || "Other";
     acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
-
   const total   = foods?.length || 0;
   const entries = Object.entries(groups).sort((a, b) => b[1] - a[1]);
   if (!total) return null;
+
+  const categoryColors = {
+    Food:   "#22c55e",
+    Snack:  "#3b82f6",
+    Drinks: "#f59e0b",
+    Sweets: "#ec4899",
+    Other:  "#8b5cf6",
+  };
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
@@ -442,29 +306,186 @@ function MenuComparison({ foods }) {
         <span className="text-[11px] text-gray-400">{total} total items</span>
       </div>
       <div className="flex flex-wrap gap-10 justify-center mb-6">
-        {entries.slice(0, 3).map(([cat, count], i) => (
+        {entries.slice(0, 4).map(([cat, count], i) => (
           <MiniDonut
             key={cat}
             pct={Math.round((count / total) * 100)}
-            color={CHART_COLORS[i]}
+            color={categoryColors[cat] || CHART_COLORS[i]}
             label={cat}
             count={count}
           />
         ))}
       </div>
-      <div className="flex flex-col gap-2.5">
-        {entries.map(([cat, count], i) => (
-          <div key={cat} className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
-            <span className="text-xs text-gray-500 dark:text-slate-400 w-24 capitalize truncate">{cat}</span>
-            <div className="flex-1 bg-gray-100 dark:bg-slate-700 rounded-full h-1.5">
-              <div className="h-1.5 rounded-full transition-all"
-                style={{ width: `${(count / total) * 100}%`, background: CHART_COLORS[i % CHART_COLORS.length] }} />
-            </div>
-            <span className="text-xs font-semibold text-gray-700 dark:text-slate-200 w-5 text-right">{count}</span>
+      
+    </div>
+  );
+}
+
+// ─── Filter Modal ─────────────────────────────────────────────────
+function FilterModal({ onClose, onApply, currentFilters }) {
+  const [selectedSubcategories, setSelectedSubcategories] = useState(
+    currentFilters.subcategories || []
+  );
+  const [stockFilter, setStockFilter] = useState(currentFilters.stock || "all");
+  const [priceMin, setPriceMin] = useState(currentFilters.priceMin || "");
+  const [priceMax, setPriceMax] = useState(currentFilters.priceMax || "");
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  function toggleSubcategory(sub) {
+    setSelectedSubcategories((prev) =>
+      prev.includes(sub) ? prev.filter((s) => s !== sub) : [...prev, sub]
+    );
+  }
+
+  function handleApply() {
+    onApply({
+      subcategories: selectedSubcategories,
+      stock: stockFilter,
+      priceMin: priceMin ? Number(priceMin) : "",
+      priceMax: priceMax ? Number(priceMax) : "",
+    });
+    onClose();
+  }
+
+  function handleReset() {
+    setSelectedSubcategories([]);
+    setStockFilter("all");
+    setPriceMin("");
+    setPriceMax("");
+  }
+
+  const subcategoryColors = {
+    Food:   "bg-green-50 border-green-300 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-400",
+    Snack:  "bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-400",
+    Drinks: "bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-400",
+    Sweets: "bg-pink-50 border-pink-300 text-pink-700 dark:bg-pink-900/30 dark:border-pink-700 dark:text-pink-400",
+  };
+  const subcategoryDefault = "bg-gray-50 border-gray-200 text-gray-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-400";
+
+  const activeCount = [
+    selectedSubcategories.length > 0,
+    stockFilter !== "all",
+    !!priceMin,
+    !!priceMax,
+  ].filter(Boolean).length;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Filter Items</h3>
+            {activeCount > 0 && (
+              <span className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {activeCount}
+              </span>
+            )}
           </div>
-        ))}
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-full border border-gray-200 dark:border-slate-600 flex items-center justify-center text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
+          >
+            <Icon.Close />
+          </button>
+        </div>
+
+        {/* Category filter */}
+        <div className="mb-4">
+          <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2 uppercase tracking-wide">Category</p>
+          <div className="flex flex-wrap gap-2">
+            {SUBCATEGORIES.map((sub) => {
+              const isActive = selectedSubcategories.includes(sub);
+              return (
+                <button
+                  key={sub}
+                  type="button"
+                  onClick={() => toggleSubcategory(sub)}
+                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition ${
+                    isActive
+                      ? subcategoryColors[sub] || "bg-green-50 border-green-300 text-green-700"
+                      : subcategoryDefault
+                  }`}
+                >
+                  {sub}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Stock filter */}
+        <div className="mb-4">
+          <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2 uppercase tracking-wide">Stock Status</p>
+          <div className="flex gap-2">
+            {[
+              { value: "all", label: "All" },
+              { value: "in", label: "In Stock" },
+              { value: "out", label: "Out of Stock" },
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setStockFilter(value)}
+                className={`flex-1 text-xs py-1.5 rounded-lg border font-medium transition ${
+                  stockFilter === value
+                    ? "bg-green-500 border-green-500 text-white"
+                    : "border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:border-green-400"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Price range */}
+        <div className="mb-5">
+          <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2 uppercase tracking-wide">Price Range ($)</p>
+          <div className="flex gap-2 items-center">
+            <input
+              type="number"
+              value={priceMin}
+              onChange={(e) => setPriceMin(e.target.value)}
+              placeholder="Min"
+              className={inputCls("flex-1")}
+            />
+            <span className="text-gray-300 dark:text-slate-600 text-xs">—</span>
+            <input
+              type="number"
+              value={priceMax}
+              onChange={(e) => setPriceMax(e.target.value)}
+              placeholder="Max"
+              className={inputCls("flex-1")}
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleReset}
+            className="flex-1 text-xs border border-gray-200 dark:border-slate-600 text-gray-500 dark:text-slate-400 rounded-full py-2.5 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={handleApply}
+            className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold py-2.5 rounded-full transition"
+          >
+            Apply Filters
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -488,14 +509,10 @@ function StepIndicator({ step, labels }) {
               }`}>
                 {done ? <Icon.Check /> : num}
               </div>
-              <span className={`text-[10px] font-medium whitespace-nowrap ${active ? "text-green-600" : "text-gray-400"}`}>
-                {label}
-              </span>
+              <span className={`text-[10px] font-medium whitespace-nowrap ${active ? "text-green-600" : "text-gray-400"}`}>{label}</span>
             </div>
             {i < labels.length - 1 && (
-              <div className={`flex-1 h-0.5 mx-2 mb-4 rounded transition-all ${
-                done ? "bg-green-400" : "bg-gray-100 dark:bg-slate-700"
-              }`} />
+              <div className={`flex-1 h-0.5 mx-2 mb-4 rounded transition-all ${done ? "bg-green-400" : "bg-gray-100 dark:bg-slate-700"}`} />
             )}
           </div>
         );
@@ -504,13 +521,12 @@ function StepIndicator({ step, labels }) {
   );
 }
 
-// ─── Food Form Modal — FIX: FormData for POST + PUT ───────────────
+// ─── Food Form Modal ──────────────────────────────────────────────
 function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
   const [err,  setErr]  = useState("");
 
-  // Step 1
   const [name,        setName]        = useState(initial?.name        ?? "");
   const [price,       setPrice]       = useState(initial?.price       ?? "");
   const [subcategory, setSubcategory] = useState(initial?.subcategory ?? "");
@@ -519,21 +535,15 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
   const [imagePreview,setImagePreview]= useState(initial?.image ?? "");
   const fileRef = useRef();
 
-  // Step 2
   const [ingInput,    setIngInput]    = useState("");
-  const [ingredients, setIngredients] = useState(
-    Array.isArray(initial?.ingredients) ? initial.ingredients : []
-  );
+  const [ingredients, setIngredients] = useState(Array.isArray(initial?.ingredients) ? initial.ingredients : []);
   const [nutrition,   setNutrition]   = useState(initial?.nutritionInfo ?? "");
   const [inStock,     setInStock]     = useState(initial?.stockAvailable ?? true);
 
-  // Step 3
   const thisYear = new Date().getFullYear();
   const [month,   setMonth]   = useState(initial?.addedMonth ?? "");
   const [year,    setYear]    = useState(initial?.addedYear  ?? String(thisYear));
-  const [seasons, setSeasons] = useState(
-    Array.isArray(initial?.seasons) ? initial.seasons : []
-  );
+  const [seasons, setSeasons] = useState(Array.isArray(initial?.seasons) ? initial.seasons : []);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
@@ -555,31 +565,27 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
   }
 
   function toggleSeason(label) {
-    setSeasons((prev) =>
-      prev.includes(label) ? prev.filter((s) => s !== label) : [...prev, label]
-    );
+    setSeasons((prev) => prev.includes(label) ? prev.filter((s) => s !== label) : [...prev, label]);
   }
 
   function goNext() {
     setErr("");
     if (step === 1) {
-      if (!name.trim())                          return setErr("Mahsulot nomi kerak");
-      if (!price || isNaN(price) || +price <= 0) return setErr("Togri narx kiriting");
-      if (!subcategory.trim())                   return setErr("Kategoriya kerak");
+      if (!name.trim())                          return setErr("Product name is required");
+      if (!price || isNaN(price) || +price <= 0) return setErr("Please enter a valid price");
+      if (!subcategory.trim())                   return setErr("Category is required");
       setStep(2);
     } else if (step === 2) {
-      if (ingredients.length === 0) return setErr("Kamida bitta tarkib kiriting");
+      if (ingredients.length === 0) return setErr("Add at least one ingredient");
       setStep(3);
     }
   }
 
-  // ── FIXED handleSubmit: FormData (multipart/form-data) ──────────
   async function handleSubmit() {
     setErr("");
     setBusy(true);
     try {
       const formData = new FormData();
-
       formData.append("name",           name.trim());
       formData.append("price",          Number(price));
       formData.append("category",       CATEGORY_ID);
@@ -589,52 +595,36 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
       formData.append("stockAvailable", inStock);
       formData.append("addedMonth",     month);
       formData.append("addedYear",      Number(year));
+      formData.append("ingredients",    JSON.stringify(ingredients));
+      formData.append("seasons",        JSON.stringify(seasons));
+      if (imageFile) formData.append("image", imageFile);
+      if (mode === "add") { formData.append("rating", 0); formData.append("sold", 0); }
 
-      // Array fields — append each item or JSON string based on backend expectation
-      // Most backends with multer accept JSON string for arrays
-      formData.append("ingredients", JSON.stringify(ingredients));
-      formData.append("seasons",     JSON.stringify(seasons));
-
-      if (imageFile) {
-        formData.append("image", imageFile);
-      }
-
-      if (mode === "add") {
-        formData.append("rating", 0);
-        formData.append("sold",   0);
-      }
-
-      const url    = mode === "add"
-        ? `${BASE}/food`
-        : `${BASE}/food/${initial._id || initial.id}`;
+      const url    = mode === "add" ? `${BASE}/food` : `${BASE}/food/${initial._id || initial.id}`;
       const method = mode === "add" ? "post" : "put";
-
-      // No Content-Type header — axios sets multipart/form-data automatically
       await axios[method](url, formData);
 
       onSaved?.();
       onClose();
     } catch (e) {
-      setErr(e?.response?.data?.message || "Server xatosi. Qayta urinib koring.");
+      setErr(e?.response?.data?.message || "Server error. Please try again.");
     } finally {
       setBusy(false);
     }
   }
 
-  const STEP_LABELS = ["Asosiy malumot", "Tarkib", "Mavsum va sana"];
+  const STEP_LABELS = ["Basic Info", "Ingredients", "Season & Date"];
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <div>
             <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">
-              {mode === "add" ? "Yangi Taom Qoshish" : "Taomni Tahrirlash"}
+              {mode === "add" ? "Add New Item" : "Edit Item"}
             </h3>
-            <p className="text-[11px] text-gray-400 mt-0.5">Qadam {step} / 3</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">Step {step} / 3</p>
           </div>
           <button onClick={onClose}
             className="w-7 h-7 rounded-full border border-gray-200 dark:border-slate-600 flex items-center justify-center text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
@@ -644,45 +634,43 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
 
         <StepIndicator step={step} labels={STEP_LABELS} />
 
-        {/* Step 1 */}
         {step === 1 && (
           <div className="flex flex-col gap-3">
-            <Field label="Mahsulot nomi" required>
+            <Field label="Product Name" required>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)}
                 placeholder="Spicy Mozarella with Barbeque" className={inputCls()} />
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Narx ($)" required>
-                <input type="number" min="0" step="0.01" value={price}
-                  onChange={(e) => setPrice(e.target.value)} placeholder="15.00" className={inputCls()} />
+              <Field label="Price ($)" required>
+                <input type="number" min="0" step="100" value={price}
+                  onChange={(e) => setPrice(e.target.value)} placeholder="25000" className={inputCls()} />
               </Field>
-              <Field label="Kategoriya" required>
+              <Field label="Category" required>
                 <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)} className={selectCls}>
-                  <option value="">-- tanlang --</option>
-                  {["Burger","Pizza","Sandwich","Grill","Snack","Dessert","Drink","Noodle","Other"].map((c) => (
+                  <option value="">-- select --</option>
+                  {SUBCATEGORIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
               </Field>
             </div>
-            <Field label="Tavsif">
+            <Field label="Description">
               <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-                placeholder="Bu taom haqida..." rows={3} className={inputCls("resize-none")} />
+                placeholder="Tell us about this item..." rows={3} className={inputCls("resize-none")} />
             </Field>
-            <Field label="Mahsulot rasmi">
+            <Field label="Product Image">
               <div onClick={() => fileRef.current?.click()}
                 className="border-2 border-dashed border-gray-200 dark:border-slate-600 rounded-xl p-4 flex flex-col items-center gap-2 cursor-pointer hover:border-green-400 transition">
                 {imagePreview ? (
                   <>
-                    <img src={imagePreview} alt="preview"
-                      className="w-full h-36 object-cover rounded-lg"
+                    <img src={imagePreview} alt="preview" className="w-full h-36 object-cover rounded-lg"
                       onError={(e) => { e.target.style.display = "none"; }} />
-                    <p className="text-[10px] text-green-500">Rasmni ozgartirish uchun bosing</p>
+                    <p className="text-[10px] text-green-500">Click to change image</p>
                   </>
                 ) : (
                   <>
                     <span className="text-gray-400"><Icon.Upload /></span>
-                    <p className="text-xs text-gray-400">Rasm yuklash uchun bosing</p>
+                    <p className="text-xs text-gray-400">Click to upload image</p>
                     <p className="text-[10px] text-gray-300">JPG, PNG, WebP</p>
                   </>
                 )}
@@ -692,76 +680,61 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
           </div>
         )}
 
-        {/* Step 2 */}
         {step === 2 && (
           <div className="flex flex-col gap-4">
-            <Field label="Tarkiblarni kiriting" hint="Vergul bilan ajrating">
+            <Field label="Enter ingredients" hint="Separate with commas">
               <div className="flex gap-2">
-                <input type="text" value={ingInput}
-                  onChange={(e) => setIngInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === ",") {
-                      e.preventDefault();
-                      addIngredients();
-                    }
-                  }}
-                  placeholder="pishloq, sous, pasta..." className={inputCls("flex-1")} />
+                <input type="text" value={ingInput} onChange={(e) => setIngInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addIngredients(); } }}
+                  placeholder="cheese, sauce, pasta..." className={inputCls("flex-1")} />
                 <button type="button" onClick={addIngredients}
                   className="px-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-semibold transition">
-                  Qosh
+                  Add
                 </button>
               </div>
             </Field>
             {ingredients.length > 0 ? (
               <div>
-                <p className="text-[10px] text-gray-400 dark:text-slate-500 mb-2">
-                  {ingredients.length} ta tarkib qoshildi
-                </p>
+                <p className="text-[10px] text-gray-400 dark:text-slate-500 mb-2">{ingredients.length} ingredients added</p>
                 <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
                   {ingredients.map((ing, i) => (
                     <span key={i} className="flex items-center gap-1 text-[11px] bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2.5 py-1 rounded-full">
                       {ing}
-                      <button type="button"
-                        onClick={() => setIngredients((prev) => prev.filter((x) => x !== ing))}
-                        className="hover:text-red-400 transition ml-0.5">
-                        <Icon.Close />
-                      </button>
+                      <button type="button" onClick={() => setIngredients((prev) => prev.filter((x) => x !== ing))}
+                        className="hover:text-red-400 transition ml-0.5"><Icon.Close /></button>
                     </span>
                   ))}
                 </div>
               </div>
             ) : (
               <div className="border-2 border-dashed border-gray-100 dark:border-slate-700 rounded-xl py-6 text-center">
-                <p className="text-xs text-gray-300 dark:text-slate-600">Hali tarkib qoshilmagan</p>
+                <p className="text-xs text-gray-300 dark:text-slate-600">No ingredients added yet</p>
               </div>
             )}
-            <Field label="Ozuqa malumoti">
+            <Field label="Nutrition Info">
               <input type="text" value={nutrition} onChange={(e) => setNutrition(e.target.value)}
-                placeholder="Kalori: 608, Oqsil: 25g..." className={inputCls()} />
+                placeholder="Calories: 608, Protein: 25g..." className={inputCls()} />
             </Field>
             <div className="flex items-center justify-between p-3.5 bg-gray-50 dark:bg-slate-700/50 rounded-xl">
               <div>
-                <p className="text-xs font-semibold text-gray-700 dark:text-slate-200">Stokda bor</p>
-                <p className="text-[10px] text-gray-400 mt-0.5">
-                  {inStock ? "Buyurtma qilish mumkin" : "Hozir mavjud emas"}
-                </p>
+                <p className="text-xs font-semibold text-gray-700 dark:text-slate-200">In Stock</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{inStock ? "Available for ordering" : "Currently unavailable"}</p>
               </div>
               <Toggle value={inStock} onChange={setInStock} />
             </div>
           </div>
         )}
 
-        {/* Step 3 */}
         {step === 3 && (
           <div className="flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Qoshilgan oy">
+              <Field label="Added Month">
                 <select value={month} onChange={(e) => setMonth(e.target.value)} className={selectCls}>
-                  <option value="">-- tanlang --</option>
+                  <option value="">-- select --</option>
                   {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </Field>
-              <Field label="Yil">
+              <Field label="Year">
                 <select value={year} onChange={(e) => setYear(e.target.value)} className={selectCls}>
                   {Array.from({ length: 6 }, (_, i) => thisYear - i).map((y) => (
                     <option key={y} value={y}>{y}</option>
@@ -769,7 +742,7 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
                 </select>
               </Field>
             </div>
-            <Field label="Mavsum" hint="Qaysi mavsumda taklif etiladi?">
+            <Field label="Season" hint="Which seasons is this available?">
               <div className="flex gap-2 flex-wrap mt-1">
                 {SEASONS.map(({ label, text }) => (
                   <button key={label} type="button" onClick={() => toggleSeason(label)}
@@ -782,25 +755,22 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-gray-400 mt-1.5">Bosh qolsa = yil boyi mavjud</p>
+              <p className="text-[10px] text-gray-400 mt-1.5">Leave empty = available year-round</p>
             </Field>
-            {/* Summary */}
             <div className="bg-gray-50 dark:bg-slate-700/50 rounded-xl p-3.5">
-              <p className="text-xs font-semibold text-gray-600 dark:text-slate-300 mb-2">Xulosa</p>
+              <p className="text-xs font-semibold text-gray-600 dark:text-slate-300 mb-2">Summary</p>
               {[
-                ["Nomi",       name],
-                ["Narx",       `$${Number(price || 0).toFixed(2)}`],
-                ["Kategoriya", subcategory],
-                ["Tarkiblar",  `${ingredients.length} ta`],
-                ["Stokda",     inStock ? "Ha" : "Yoq"],
-                ["Qoshilgan",  [month, year].filter(Boolean).join(" ") || "--"],
-                ["Mavsum",     seasons.join(", ") || "Yil boyi"],
+                ["Name",        name],
+                ["Price",       `${Number(price || 0).toLocaleString()} $`],
+                ["Category",    subcategory],
+                ["Ingredients", `${ingredients.length} items`],
+                ["In Stock",    inStock ? "Yes" : "No"],
+                ["Added",       [month, year].filter(Boolean).join(" ") || "--"],
+                ["Season",      seasons.join(", ") || "Year-round"],
               ].map(([key, val]) => (
                 <div key={key} className="flex justify-between text-[11px] mb-1 last:mb-0">
                   <span className="text-gray-400">{key}</span>
-                  <span className="text-gray-700 dark:text-slate-200 font-medium truncate ml-4 max-w-[180px]">
-                    {val || "--"}
-                  </span>
+                  <span className="text-gray-700 dark:text-slate-200 font-medium truncate ml-4 max-w-[180px]">{val || "--"}</span>
                 </div>
               ))}
             </div>
@@ -808,28 +778,19 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
         )}
 
         {err && (
-          <p className="text-xs text-red-400 mt-3 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
-            {err}
-          </p>
+          <p className="text-xs text-red-400 mt-3 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{err}</p>
         )}
 
         <div className="flex gap-2 mt-5">
           {step > 1 && (
-            <button type="button"
-              onClick={() => { setStep((s) => s - 1); setErr(""); }}
+            <button type="button" onClick={() => { setStep((s) => s - 1); setErr(""); }}
               className="flex-1 text-xs border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-full px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
-              Orqaga
+              Back
             </button>
           )}
-          <button type="button"
-            onClick={step < 3 ? goNext : handleSubmit}
-            disabled={busy}
+          <button type="button" onClick={step < 3 ? goNext : handleSubmit} disabled={busy}
             className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed text-white text-xs font-semibold py-2.5 rounded-full transition">
-            {busy
-              ? "Saqlanmoqda..."
-              : step < 3
-                ? "Keyingisi"
-                : mode === "add" ? "Menyuga Qosh" : "Ozgarishlarni Saqlash"}
+            {busy ? "Saving..." : step < 3 ? "Next" : mode === "add" ? "Add to Menu" : "Save Changes"}
           </button>
         </div>
       </div>
@@ -850,24 +811,16 @@ function DeleteModal({ food, onClose, onDeleted }) {
   }, [onClose]);
 
   async function handleDelete() {
-    setBusy(true);
-    setErr("");
+    setBusy(true); setErr("");
     try {
-      // Log to localStorage
       const log = JSON.parse(localStorage.getItem("foodDeleteLog") || "[]");
-      log.unshift({
-        id:        food._id || food.id,
-        name:      food.name,
-        reason:    reason.trim() || "Sabab korsatilmagan",
-        deletedAt: new Date().toISOString(),
-      });
+      log.unshift({ id: food._id || food.id, name: food.name, reason: reason.trim() || "No reason given", deletedAt: new Date().toISOString() });
       localStorage.setItem("foodDeleteLog", JSON.stringify(log.slice(0, 100)));
-
       await axios.delete(`${BASE}/food/${food._id || food.id}`);
       onDeleted?.();
       onClose();
     } catch (e) {
-      setErr(e?.response?.data?.message || "Ochirish xatoligi. Qayta urinib koring.");
+      setErr(e?.response?.data?.message || "Delete failed. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -878,39 +831,35 @@ function DeleteModal({ food, onClose, onDeleted }) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Taomni Ochirish</h3>
+          <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">Delete Item</h3>
           <button onClick={onClose}
             className="w-7 h-7 rounded-full border border-gray-200 dark:border-slate-600 flex items-center justify-center text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
             <Icon.Close />
           </button>
         </div>
         <div className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl mb-4">
-          <FoodImage src={food.image} alt={food.name}
-            className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+          <FoodImage src={food.image} alt={food.name} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
           <div>
             <p className="text-xs font-semibold text-gray-800 dark:text-slate-100">{food.name}</p>
-            <p className="text-[10px] text-red-400 mt-0.5">Bu amalni qaytarib bolmaydi</p>
+            <p className="text-[10px] text-red-400 mt-0.5">This action cannot be undone</p>
           </div>
         </div>
         <label className="text-xs text-gray-500 dark:text-slate-400 mb-1.5 block">
-          Nima uchun ochiryapsiz?
-          <span className="text-gray-400 ml-1">(Qaydlarga saqlanadi)</span>
+          Why are you deleting this? <span className="text-gray-400 ml-1">(Saved to logs)</span>
         </label>
         <textarea value={reason} onChange={(e) => setReason(e.target.value)}
-          placeholder="masalan: Menyu yangilandi, Mavsum tugadi..."
+          placeholder="e.g. Menu updated, Season ended..."
           rows={4}
           className="w-full border border-gray-200 dark:border-slate-600 dark:bg-slate-700 text-gray-500 dark:text-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none focus:border-red-300 resize-none transition" />
-        {err && (
-          <p className="text-xs text-red-400 mt-2 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{err}</p>
-        )}
+        {err && <p className="text-xs text-red-400 mt-2 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{err}</p>}
         <div className="flex gap-2 mt-4">
           <button type="button" onClick={onClose}
             className="flex-1 text-xs border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 rounded-full py-2.5 hover:bg-gray-50 dark:hover:bg-slate-700 transition">
-            Bekor
+            Cancel
           </button>
           <button type="button" onClick={handleDelete} disabled={busy}
             className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed text-white text-xs font-semibold py-2.5 rounded-full transition">
-            {busy ? "Ochirilmoqda..." : "Ochirish"}
+            {busy ? "Deleting..." : "Delete"}
           </button>
         </div>
       </div>
@@ -924,11 +873,8 @@ function FoodCard({ food, onEdit, onDelete }) {
     <div className="py-4">
       <div className="w-[240px] bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-4 text-center hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
         <div className="flex justify-center -mt-12">
-          <FoodImage
-            src={food.image}
-            alt={food.name}
-            className="w-32 h-32 object-cover rounded-full shadow-md border-4 border-white dark:border-slate-800"
-          />
+          <FoodImage src={food.image} alt={food.name}
+            className="w-32 h-32 object-cover rounded-full shadow-md border-4 border-white dark:border-slate-800" />
         </div>
         <h3 className="mt-4 font-semibold text-sm text-gray-800 dark:text-slate-100 h-[44px] leading-tight line-clamp-2 px-4">
           {food.name}
@@ -937,22 +883,18 @@ function FoodCard({ food, onEdit, onDelete }) {
           <span className="text-green-500">Food</span>
           <span className="text-gray-400 dark:text-slate-400"> / {food.subcategory || food.category?.name || "Other"}</span>
         </p>
-        <p className="text-sm font-bold text-green-600 mt-1">${Number(food.price).toFixed(2)}</p>
+        <p className="text-sm font-bold text-green-600 mt-1">{Number(food.price).toLocaleString()} $</p>
         <div className="flex justify-center gap-2 mt-4">
           <Link to={`/foods/${food._id || food.id}`}>
-            <ActionBtn variant="green" title="Korish"><Icon.Eye /></ActionBtn>
+            <ActionBtn variant="green" title="View"><Icon.Eye /></ActionBtn>
           </Link>
-          <ActionBtn variant="amber" title="Tahrirlash" onClick={() => onEdit(food)}>
-            <Icon.Edit />
-          </ActionBtn>
-          <ActionBtn variant="red" title="Ochirish" onClick={() => onDelete(food)}>
-            <Icon.Trash />
-          </ActionBtn>
+          <ActionBtn variant="amber" title="Edit" onClick={() => onEdit(food)}><Icon.Edit /></ActionBtn>
+          <ActionBtn variant="red"   title="Delete" onClick={() => onDelete(food)}><Icon.Trash /></ActionBtn>
         </div>
         <div className="flex justify-center gap-4 mt-2">
-          <span className="text-[10px] text-gray-400">Korish</span>
-          <span className="text-[10px] text-gray-400">Tahrir</span>
-          <span className="text-[10px] text-gray-400">Ochir</span>
+          <span className="text-[10px] text-gray-400">View</span>
+          <span className="text-[10px] text-gray-400">Edit</span>
+          <span className="text-[10px] text-gray-400">Delete</span>
         </div>
       </div>
     </div>
@@ -964,23 +906,20 @@ function FoodRow({ food, onEdit, onDelete }) {
   return (
     <tr className="border-b border-gray-50 dark:border-slate-700 hover:bg-gray-50/50 dark:hover:bg-slate-700/30 transition">
       <td className="py-3 pl-4">
-        <FoodImage src={food.image} alt={food.name}
-          className="w-10 h-10 rounded-full object-cover" />
+        <FoodImage src={food.image} alt={food.name} className="w-10 h-10 rounded-full object-cover" />
       </td>
       <td className="py-3 px-3">
         <p className="text-xs font-semibold text-gray-800 dark:text-slate-100">{food.name}</p>
         <p className="text-[10px] text-gray-400 mt-0.5 truncate max-w-[160px]">{food.description || "--"}</p>
       </td>
       <td className="py-3 px-3">
-        <span className="text-xs text-gray-600 dark:text-slate-300 capitalize">
-          {food.category?.name || "food"}
-        </span>
+        <span className="text-xs text-gray-600 dark:text-slate-300">{food.category?.name || "fast food"}</span>
         {food.subcategory && (
           <span className="text-[10px] text-gray-400 dark:text-slate-500 ml-1">/ {food.subcategory}</span>
         )}
       </td>
       <td className="py-3 px-3">
-        <span className="text-xs font-semibold text-green-600">${Number(food.price).toFixed(2)}</span>
+        <span className="text-xs font-semibold text-green-600">{Number(food.price).toLocaleString()} $</span>
       </td>
       <td className="py-3 px-3">
         <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
@@ -988,20 +927,16 @@ function FoodRow({ food, onEdit, onDelete }) {
             ? "bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400"
             : "bg-red-50 text-red-400 dark:bg-red-900/30"
         }`}>
-          {food.stockAvailable ? "Stokda" : "Stok yoq"}
+          {food.stockAvailable ? "In Stock" : "Out of Stock"}
         </span>
       </td>
       <td className="py-3 px-3 pr-4">
         <div className="flex gap-1.5">
           <Link to={`/foods/${food._id || food.id}`}>
-            <ActionBtn variant="blue" title="Korish"><Icon.Eye /></ActionBtn>
+            <ActionBtn variant="blue" title="View"><Icon.Eye /></ActionBtn>
           </Link>
-          <ActionBtn variant="amber" title="Tahrirlash" onClick={() => onEdit(food)}>
-            <Icon.Edit />
-          </ActionBtn>
-          <ActionBtn variant="red" title="Ochirish" onClick={() => onDelete(food)}>
-            <Icon.Trash />
-          </ActionBtn>
+          <ActionBtn variant="amber" title="Edit" onClick={() => onEdit(food)}><Icon.Edit /></ActionBtn>
+          <ActionBtn variant="red"   title="Delete" onClick={() => onDelete(food)}><Icon.Trash /></ActionBtn>
         </div>
       </td>
     </tr>
@@ -1036,9 +971,7 @@ function Pagination({ page, totalPages, onChange }) {
       {pages.map((p) => (
         <button key={p} onClick={() => onChange(p)}
           className={`w-8 h-8 rounded-lg text-xs font-medium transition ${
-            page === p
-              ? "bg-green-500 text-white shadow-sm"
-              : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 text-gray-500 hover:border-green-400"
+            page === p ? "bg-green-500 text-white shadow-sm" : "bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 text-gray-500 hover:border-green-400"
           }`}>
           {p}
         </button>
@@ -1058,28 +991,65 @@ function Foods() {
   const { foods, loading } = useSelector((s) => s.food);
   const [dark, toggleDark] = useDark();
 
-  const [page,   setPage]   = useState(1);
-  const [view,   setView]   = useState("grid");
+  const [page, setPage] = useState(1);
+
+  const [view, setView] = useState(() => {
+    try {
+      const saved = localStorage.getItem(VIEW_STORAGE_KEY);
+      return saved === "list" || saved === "grid" ? saved : "grid";
+    } catch {
+      return "grid";
+    }
+  });
+
+  const handleViewChange = (newView) => {
+    setView(newView);
+    try { localStorage.setItem(VIEW_STORAGE_KEY, newView); } catch {}
+  };
+
   const [search, setSearch] = useState("");
+
+  // Filter state
+  const [filters, setFilters] = useState({
+    subcategories: [],
+    stock: "all",
+    priceMin: "",
+    priceMax: "",
+  });
+  const [showFilter, setShowFilter] = useState(false);
 
   const [showAdd,    setShowAdd]    = useState(false);
   const [editFood,   setEditFood]   = useState(null);
   const [deleteFood, setDeleteFood] = useState(null);
 
-  useEffect(() => {
-    dispatch(fetchFoods());
-  }, [dispatch]);
+  useEffect(() => { dispatch(fetchFoods()); }, [dispatch]);
 
   const refresh = () => dispatch(fetchFoods());
 
-  const normalizedFoods = (foods ?? []).map((f) => ({
-    ...f,
-    id: f._id || f.id,
-  }));
+  const normalizedFoods = (foods ?? []).map((f) => ({ ...f, id: f._id || f.id }));
 
-  const filtered = normalizedFoods.filter((f) =>
-    f.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  // Active filter count for badge
+  const activeFilterCount = [
+    filters.subcategories.length > 0,
+    filters.stock !== "all",
+    !!filters.priceMin,
+    !!filters.priceMax,
+  ].filter(Boolean).length;
+
+  // Apply all filters
+  const filtered = normalizedFoods.filter((f) => {
+    // Search
+    if (!f.name?.toLowerCase().includes(search.toLowerCase())) return false;
+    // Subcategory filter
+    if (filters.subcategories.length > 0 && !filters.subcategories.includes(f.subcategory)) return false;
+    // Stock filter
+    if (filters.stock === "in"  && !f.stockAvailable) return false;
+    if (filters.stock === "out" &&  f.stockAvailable) return false;
+    // Price filter
+    if (filters.priceMin !== "" && f.price < filters.priceMin) return false;
+    if (filters.priceMax !== "" && f.price > filters.priceMax) return false;
+    return true;
+  });
 
   const totalPages   = Math.ceil(filtered.length / PAGE_LIMIT);
   const visibleFoods = filtered.slice((page - 1) * PAGE_LIMIT, page * PAGE_LIMIT);
@@ -1092,16 +1062,20 @@ function Foods() {
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">Foods</h1>
           <p className="text-xs text-gray-400 mt-0.5">
-            {loading ? "Yuklanmoqda..." : `${normalizedFoods.length} ta taom boshqarilmoqda`}
+            {loading ? "Loading..." : `Managing ${normalizedFoods.length} items`}
+            {activeFilterCount > 0 && (
+              <span className="ml-2 text-green-500">· {filtered.length} filtered</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
+
           {/* Search */}
           <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-full px-4 py-2.5 border border-gray-100 dark:border-slate-700 w-56">
             <span className="text-gray-400 flex-shrink-0"><Icon.Search /></span>
             <input type="text" value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Taom qidiring..."
+              placeholder="Search items..."
               className="text-xs text-gray-600 dark:text-slate-200 bg-transparent outline-none w-full placeholder:text-gray-400" />
             {search && (
               <button onClick={() => { setSearch(""); setPage(1); }}
@@ -1113,7 +1087,7 @@ function Foods() {
 
           {/* View toggle */}
           <div className="flex items-center bg-white dark:bg-slate-800 rounded-xl p-1 border border-gray-100 dark:border-slate-700">
-            <button onClick={() => setView("list")}
+            <button onClick={() => handleViewChange("list")}
               className={`p-2 rounded-lg transition ${
                 view === "list"
                   ? "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200"
@@ -1121,7 +1095,7 @@ function Foods() {
               }`}>
               <Icon.List />
             </button>
-            <button onClick={() => setView("grid")}
+            <button onClick={() => handleViewChange("grid")}
               className={`p-2 rounded-lg transition ${
                 view === "grid"
                   ? "bg-green-500 text-white"
@@ -1131,19 +1105,63 @@ function Foods() {
             </button>
           </div>
 
-          {/* Dark mode */}
-          {/* <button onClick={toggleDark}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-green-400 transition">
-            {dark ? <Icon.Sun /> : <Icon.Moon />}
-          </button> */}
+          {/* Filter button */}
+          <button
+            onClick={() => setShowFilter(true)}
+            className={`relative flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-full transition border ${
+              activeFilterCount > 0
+                ? "bg-green-50 border-green-300 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-400"
+                : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-green-400"
+            }`}
+          >
+            <Icon.Filter />
+            Filter
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-green-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
 
           {/* Add button */}
           <button onClick={() => setShowAdd(true)}
             className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition shadow-sm">
-            <Icon.Plus /> Yangi Taom
+            <Icon.Plus /> New Item
           </button>
         </div>
       </div>
+
+      {/* Active filter chips */}
+      {activeFilterCount > 0 && (
+        <div className="px-8 pb-2 flex flex-wrap gap-2 items-center">
+          <span className="text-[11px] text-gray-400">Active filters:</span>
+          {filters.subcategories.map((s) => (
+            <span key={s} className="flex items-center gap-1 text-[11px] bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2.5 py-1 rounded-full border border-green-200 dark:border-green-800">
+              {s}
+              <button onClick={() => setFilters((f) => ({ ...f, subcategories: f.subcategories.filter((x) => x !== s) }))}
+                className="hover:text-red-400 transition"><Icon.Close /></button>
+            </span>
+          ))}
+          {filters.stock !== "all" && (
+            <span className="flex items-center gap-1 text-[11px] bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2.5 py-1 rounded-full border border-blue-200 dark:border-blue-800">
+              {filters.stock === "in" ? "In Stock" : "Out of Stock"}
+              <button onClick={() => setFilters((f) => ({ ...f, stock: "all" }))}
+                className="hover:text-red-400 transition"><Icon.Close /></button>
+            </span>
+          )}
+          {(filters.priceMin || filters.priceMax) && (
+            <span className="flex items-center gap-1 text-[11px] bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
+              {filters.priceMin ? `${Number(filters.priceMin).toLocaleString()}` : "0"} — {filters.priceMax ? `${Number(filters.priceMax).toLocaleString()}` : "∞"} $
+              <button onClick={() => setFilters((f) => ({ ...f, priceMin: "", priceMax: "" }))}
+                className="hover:text-red-400 transition"><Icon.Close /></button>
+            </span>
+          )}
+          <button onClick={() => setFilters({ subcategories: [], stock: "all", priceMin: "", priceMax: "" })}
+            className="text-[11px] text-gray-400 hover:text-red-400 transition underline">
+            Clear all
+          </button>
+        </div>
+      )}
 
       {/* Content */}
       <div className="px-8 py-4">
@@ -1159,11 +1177,11 @@ function Foods() {
         )}
 
         {view === "list" && (
-          <div className="bg-white rounde dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-slate-700">
-                  {["Rasm","Nomi","Kategoriya","Narx","Stok","Amallar"].map((h) => (
+                  {["Image","Name","Category","Price","Stock","Actions"].map((h) => (
                     <th key={h} className="text-left text-[10px] font-semibold text-gray-400 dark:text-slate-500 px-3 py-3 first:pl-4 last:pr-4 uppercase tracking-wide">
                       {h}
                     </th>
@@ -1191,11 +1209,11 @@ function Foods() {
                 <path d="M9 11h6m-6 4h4" strokeLinecap="round"/>
               </svg>
             </div>
-            <p className="text-gray-400 dark:text-slate-500 text-sm font-medium">Taom topilmadi</p>
-            {search && (
-              <button onClick={() => setSearch("")}
+            <p className="text-gray-400 dark:text-slate-500 text-sm font-medium">No items found</p>
+            {(search || activeFilterCount > 0) && (
+              <button onClick={() => { setSearch(""); setFilters({ subcategories: [], stock: "all", priceMin: "", priceMax: "" }); }}
                 className="mt-2 text-xs text-green-500 hover:underline">
-                Qidiruvni tozalash
+                Clear search & filters
               </button>
             )}
           </div>
@@ -1204,7 +1222,7 @@ function Foods() {
         {!loading && filtered.length > 0 && (
           <div className="flex items-center justify-between mt-6 pb-2">
             <p className="text-xs text-gray-400">
-              {(page - 1) * PAGE_LIMIT + 1}--{Math.min(page * PAGE_LIMIT, filtered.length)} / {filtered.length} ta korsatilmoqda
+              {(page - 1) * PAGE_LIMIT + 1}–{Math.min(page * PAGE_LIMIT, filtered.length)} of {filtered.length} shown
             </p>
             <Pagination page={page} totalPages={totalPages} onChange={setPage} />
           </div>
@@ -1212,24 +1230,13 @@ function Foods() {
       </div>
 
       {/* Charts */}
-      <div className="px-8 pb-6 mt-4">
-        <SalesChart />
-      </div>
-
-      <div className="px-8 pb-10 mt-2">
-        <MenuComparison foods={normalizedFoods} />
-      </div>
+      <div className="px-8 pb-10 mt-2"><MenuComparison foods={normalizedFoods} /></div>
 
       {/* Modals */}
-      {showAdd && (
-        <FoodFormModal mode="add" onClose={() => setShowAdd(false)} onSaved={refresh} />
-      )}
-      {editFood && (
-        <FoodFormModal mode="edit" initial={editFood} onClose={() => setEditFood(null)} onSaved={refresh} />
-      )}
-      {deleteFood && (
-        <DeleteModal food={deleteFood} onClose={() => setDeleteFood(null)} onDeleted={refresh} />
-      )}
+      {showFilter  && <FilterModal onClose={() => setShowFilter(false)} onApply={(f) => { setFilters(f); setPage(1); }} currentFilters={filters} />}
+      {showAdd     && <FoodFormModal mode="add"  onClose={() => setShowAdd(false)}    onSaved={refresh} />}
+      {editFood    && <FoodFormModal mode="edit" initial={editFood} onClose={() => setEditFood(null)}   onSaved={refresh} />}
+      {deleteFood  && <DeleteModal   food={deleteFood}              onClose={() => setDeleteFood(null)} onDeleted={refresh} />}
     </div>
   );
 }
