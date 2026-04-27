@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
+import { FaFileInvoice, FaMoneyBillWave, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { useSelector } from 'react-redux'
 import {
   PieChart, Pie, Cell,
@@ -37,7 +38,12 @@ function Skeleton({ className = '', dark }) {
   return <div className={`animate-pulse rounded-xl ${dark ? 'bg-slate-700' : 'bg-slate-200'} ${className}`} />;
 }
 
-const ICONS = ['🧾', '💰', '✅', '❌'];
+const ICONS = [
+  FaFileInvoice,
+  FaMoneyBillWave,
+  FaCheckCircle,
+  FaTimesCircle
+];
 const COLORS_LIGHT = ['bg-blue-100', 'bg-green-100', 'bg-yellow-100', 'bg-red-100'];
 const COLORS_DARK = ['bg-blue-900', 'bg-green-900', 'bg-yellow-900', 'bg-red-900'];
 
