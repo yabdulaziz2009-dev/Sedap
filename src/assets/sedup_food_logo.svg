@@ -1,0 +1,71 @@
+<svg width="100%" viewBox="0 0 680 420" role="img" xmlns="http://www.w3.org/2000/svg" style="">
+  <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Sedup Food Logo</title>
+  <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Sedup Food — jigarrang rangda chiroyli logo, shaffof fon</desc>
+
+  <defs>
+    <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3B1F0A" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#3B1F0A" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#3B1F0A" stop-opacity="0"/>
+    </linearGradient>
+  <mask id="imagine-text-gaps-qj8ha8" maskUnits="userSpaceOnUse"><rect x="0" y="0" width="680" height="420" fill="white"/><rect x="185.09375" y="137.1999969482422" width="309.8125" height="74.4000015258789" fill="black" rx="2"/><rect x="170.19375610351562" y="192.40000915527344" width="339.6125183105469" height="95.20000457763672" fill="black" rx="2"/><rect x="206.5500030517578" y="291" width="266.1000061035156" height="19.199999809265137" fill="black" rx="2"/></mask></defs>
+
+  <!-- Top decorative line -->
+  <rect x="140" y="105" width="400" height="1" fill="url(#lineGrad)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Decorative diamond center top -->
+  <polygon points="340,95 346,105 340,115 334,105" fill="#5C2A08" style="fill:rgb(92, 42, 8);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Fork icon left -->
+  <rect x="255" y="130" width="3.5" height="32" rx="1.5" fill="#4A2008" style="fill:rgb(74, 32, 8);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <rect x="249" y="130" width="2" height="16" rx="1" fill="#4A2008" style="fill:rgb(74, 32, 8);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <rect x="253" y="130" width="2" height="16" rx="1" fill="#4A2008" style="fill:rgb(74, 32, 8);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <rect x="257" y="130" width="2" height="16" rx="1" fill="#4A2008" style="fill:rgb(74, 32, 8);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <rect x="261" y="130" width="2" height="16" rx="1" fill="#4A2008" style="fill:rgb(74, 32, 8);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M249 146 Q249 152 256.5 152 Q264 152 264 146" fill="none" stroke="#4A2008" stroke-width="2" stroke-linecap="round" mask="url(#imagine-text-gaps-qj8ha8)" style="fill:none;stroke:rgb(74, 32, 8);color:rgb(255, 255, 255);stroke-width:2px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Knife icon right -->
+  <rect x="421" y="130" width="3.5" height="32" rx="1.5" fill="#4A2008" style="fill:rgb(74, 32, 8);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M421 130 Q434 135 424.5 150 L421 162" fill="#4A2008" stroke="#3B1505" stroke-width="0.5" style="fill:rgb(74, 32, 8);stroke:rgb(59, 21, 5);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- SEDUP text -->
+  <text x="340" y="196" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="62" font-weight="900" letter-spacing="14" fill="#2B1205" style="fill:rgb(43, 18, 5);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Georgia, &quot;Times New Roman&quot;, serif;font-size:62px;font-weight:900;text-anchor:middle;dominant-baseline:auto">SEDUP</text>
+
+  <!-- Thin accent line under SEDUP -->
+  <rect x="200" y="208" width="280" height="1.5" fill="#5C2A08" rx="1" style="fill:rgb(92, 42, 8);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Decorative dots -->
+  <circle cx="190" cy="209" r="3" fill="#5C2A08" style="fill:rgb(92, 42, 8);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="490" cy="209" r="3" fill="#5C2A08" style="fill:rgb(92, 42, 8);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- FOOD text -->
+  <text x="340" y="268" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="80" font-weight="700" letter-spacing="20" fill="#7A3510" style="fill:rgb(122, 53, 16);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Georgia, &quot;Times New Roman&quot;, serif;font-size:80px;font-weight:700;text-anchor:middle;dominant-baseline:auto">FOOD</text>
+
+  <!-- Decorative swirl left -->
+  <path d="M155 235 Q165 225 175 235 Q185 245 195 235" fill="none" stroke="#5C2A08" stroke-width="1.5" stroke-linecap="round" mask="url(#imagine-text-gaps-qj8ha8)" style="fill:none;stroke:rgb(92, 42, 8);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Decorative swirl right -->
+  <path d="M525 235 Q515 225 505 235 Q495 245 485 235" fill="none" stroke="#5C2A08" stroke-width="1.5" stroke-linecap="round" mask="url(#imagine-text-gaps-qj8ha8)" style="fill:none;stroke:rgb(92, 42, 8);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Tagline -->
+  <text x="340" y="305" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="13" font-weight="400" letter-spacing="5" fill="#7A5035" style="fill:rgb(122, 80, 53);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Georgia, &quot;Times New Roman&quot;, serif;font-size:13px;font-weight:400;text-anchor:middle;dominant-baseline:auto">TASTE THE DIFFERENCE</text>
+
+  <!-- Bottom decorative line -->
+  <rect x="140" y="318" width="400" height="1" fill="url(#lineGrad)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Bottom diamond -->
+  <polygon points="340,318 346,328 340,338 334,328" fill="#5C2A08" style="fill:rgb(92, 42, 8);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Corner ornaments -->
+  <path d="M130 90 L145 90 L145 105" fill="none" stroke="#5C2A08" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:rgb(92, 42, 8);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M550 90 L535 90 L535 105" fill="none" stroke="#5C2A08" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:rgb(92, 42, 8);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M130 348 L145 348 L145 333" fill="none" stroke="#5C2A08" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:rgb(92, 42, 8);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M550 348 L535 348 L535 333" fill="none" stroke="#5C2A08" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="fill:none;stroke:rgb(92, 42, 8);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:round;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Small decorative dots row top -->
+  <circle cx="290" cy="105" r="2" fill="#7A5035" opacity="0.6" style="fill:rgb(122, 80, 53);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.6;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="310" cy="105" r="2" fill="#7A5035" opacity="0.6" style="fill:rgb(122, 80, 53);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.6;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="330" cy="105" r="2" fill="#7A5035" opacity="0.6" style="fill:rgb(122, 80, 53);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.6;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="350" cy="105" r="2" fill="#7A5035" opacity="0.6" style="fill:rgb(122, 80, 53);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.6;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="370" cy="105" r="2" fill="#7A5035" opacity="0.6" style="fill:rgb(122, 80, 53);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.6;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="390" cy="105" r="2" fill="#7A5035" opacity="0.6" style="fill:rgb(122, 80, 53);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.6;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+</svg>

@@ -232,7 +232,6 @@ const FALLBACK_IMAGES = {
   snack:    "https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=200&q=80",
   dessert:  "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&q=80",
   grill:    "https://images.unsplash.com/photo-1544025162-d76538775574?w=200&q=80",
-  sandwich: "https://images.unsplash.com/photo-1606755962773-d324e9a13086?w=200&q=80",
   default:  "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&q=80",
 };
 
@@ -1151,7 +1150,7 @@ function Foods() {
           )}
           {(filters.priceMin || filters.priceMax) && (
             <span className="flex items-center gap-1 text-[11px] bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">
-              {filters.priceMin ? `${Number(filters.priceMin).toLocaleString()}` : "0"} — {filters.priceMax ? `${Number(filters.priceMax).toLocaleString()}` : "∞"} $
+              {filters.priceMin ? `${Number(filters.priceMin).toLocaleString()}` : "0"} — {filters.priceMax ? `${Number(filters.priceMax).toLocaleString()}` : "∞"} $npm 
               <button onClick={() => setFilters((f) => ({ ...f, priceMin: "", priceMax: "" }))}
                 className="hover:text-red-400 transition"><Icon.Close /></button>
             </span>
