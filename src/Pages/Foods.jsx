@@ -218,7 +218,7 @@ function SkeletonCard() {
 function SkeletonRow() {
   return (
     <tr className="border-b border-gray-50 dark:border-slate-700">
-      {[0,1,2,3,4,5].map((i) => (
+      {[0,1,2,3,4].map((i) => (
         <td key={i} className="py-3 px-3">
           <div className="h-3 bg-gray-100 dark:bg-slate-700 rounded animate-pulse" />
         </td>
@@ -505,7 +505,7 @@ function StepIndicator({ step, labels }) {
 }
 
 // ─── Food Form Modal — FIX: FormData for POST + PUT ───────────────
-function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
+function FoodFormModal({ mode = "add", initial = null, categories = [], onClose, onSaved }) {
   const [step, setStep] = useState(1);
   const [busy, setBusy] = useState(false);
   const [err,  setErr]  = useState("");
@@ -513,7 +513,18 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
   // Step 1
   const [name,        setName]        = useState(initial?.name        ?? "");
   const [price,       setPrice]       = useState(initial?.price       ?? "");
-  const [subcategory, setSubcategory] = useState(initial?.subcategory ?? "");
+  const [subcategory, setSubcategory] = useState(initial?.subcategory ?? initial?.category?.name ?? "");
+  // categoryId: backend ObjectId (used when categories fetched), or "" (fallback to CATEGORY_ID)
+  const [categoryId,  setCategoryId]  = useState(() => {
+    if (initial?.category?._id) return initial.category._id;
+    if (categories.length) {
+      const match = categories.find(
+        (c) => c.name?.toLowerCase() === (initial?.subcategory || initial?.category?.name || "").toLowerCase()
+      );
+      return match?._id || "";
+    }
+    return "";
+  });
   const [description, setDescription] = useState(initial?.description ?? "");
   const [imageFile,   setImageFile]   = useState(null);
   const [imagePreview,setImagePreview]= useState(initial?.image ?? "");
@@ -541,11 +552,45 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  function handleImageChange(e) {
+  function compressImage(file, maxW = 800, maxH = 800, quality = 0.75) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > maxW || height > maxH) {
+          const ratio = Math.min(maxW / width, maxH / height);
+          width  = Math.round(width  * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width  = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => resolve(new File([blob], file.name, { type: "image/jpeg" })),
+          "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+
+  async function handleImageChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImageFile(file);
+    if (file.size > 10 * 1024 * 1024) {
+      setErr("Rasm 10MB dan kichik bo'lishi kerak.");
+      e.target.value = "";
+      return;
+    }
+    setErr("");
     setImagePreview(URL.createObjectURL(file));
+    const compressed = await compressImage(file);
+    setImageFile(compressed);
   }
 
   function addIngredients() {
@@ -565,7 +610,8 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
     if (step === 1) {
       if (!name.trim())                          return setErr("Mahsulot nomi kerak");
       if (!price || isNaN(price) || +price <= 0) return setErr("Togri narx kiriting");
-      if (!subcategory.trim())                   return setErr("Kategoriya kerak");
+      const catOk = categories.length ? !!categoryId : !!subcategory.trim();
+      if (!catOk)                                return setErr("Kategoriya kerak");
       setStep(2);
     } else if (step === 2) {
       if (ingredients.length === 0) return setErr("Kamida bitta tarkib kiriting");
@@ -573,49 +619,77 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
     }
   }
 
-  // ── FIXED handleSubmit: FormData (multipart/form-data) ──────────
+  // ── handleSubmit ─────────────────────────────────────────────────
   async function handleSubmit() {
     setErr("");
     setBusy(true);
     try {
-      const formData = new FormData();
-
-      formData.append("name",           name.trim());
-      formData.append("price",          Number(price));
-      formData.append("category",       CATEGORY_ID);
-      formData.append("subcategory",    subcategory.trim());
-      formData.append("description",    description.trim());
-      formData.append("nutritionInfo",  nutrition.trim());
-      formData.append("stockAvailable", inStock);
-      formData.append("addedMonth",     month);
-      formData.append("addedYear",      Number(year));
-
-      // Array fields — append each item or JSON string based on backend expectation
-      // Most backends with multer accept JSON string for arrays
-      formData.append("ingredients", JSON.stringify(ingredients));
-      formData.append("seasons",     JSON.stringify(seasons));
-
-      if (imageFile) {
-        formData.append("image", imageFile);
-      }
-
-      if (mode === "add") {
-        formData.append("rating", 0);
-        formData.append("sold",   0);
-      }
-
-      const url    = mode === "add"
-        ? `${BASE}/food`
-        : `${BASE}/food/${initial._id || initial.id}`;
+      const token  = localStorage.getItem("sedap-token");
+      const url    = mode === "add" ? `${BASE}/food` : `${BASE}/food/${initial._id || initial.id}`;
       const method = mode === "add" ? "post" : "put";
 
-      // No Content-Type header — axios sets multipart/form-data automatically
-      await axios[method](url, formData);
+      // Build base JSON payload (works without image or when backend accepts JSON)
+      const jsonPayload = {
+        name:          name.trim(),
+        price:         Number(price),
+        category:      categoryId || CATEGORY_ID,
+        subcategory:   subcategory.trim(),
+        description:   description.trim(),
+        nutritionInfo: nutrition.trim(),
+        stockAvailable: inStock,
+        addedMonth:    month,
+        addedYear:     Number(year),
+        ingredients,
+        seasons,
+        ...(mode === "add" ? { rating: 0, sold: 0 } : {}),
+      };
+
+      if (imageFile) {
+        // Convert to base64 → stored in MongoDB directly (persists after server restart)
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload  = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(imageFile);
+        });
+
+        // Try JSON with base64 image first (stored in DB, persistent)
+        try {
+          await axios[method](url, { ...jsonPayload, image: base64 }, {
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          });
+          onSaved?.();
+          onClose();
+          return;
+        } catch (jsonErr) {
+          // JSON failed → fall back to FormData file upload
+          if (jsonErr?.response?.status !== 400 && jsonErr?.response?.status !== 422) throw jsonErr;
+        }
+
+        // FormData fallback: send file + base64 string together
+        const formData = new FormData();
+        Object.entries(jsonPayload).forEach(([k, v]) => {
+          formData.append(k, typeof v === "object" ? JSON.stringify(v) : v);
+        });
+        formData.append("image",       imageFile);
+        formData.append("imageBase64", base64);
+
+        await axios[method](url, formData, { headers: { Authorization: `Bearer ${token}` } });
+      } else {
+        // No image — send as JSON
+        await axios[method](url, jsonPayload, {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        });
+      }
 
       onSaved?.();
       onClose();
     } catch (e) {
-      setErr(e?.response?.data?.message || "Server xatosi. Qayta urinib koring.");
+      if (e?.response?.status === 413) {
+        setErr("Rasm fayli juda katta. Kichikroq rasm tanlang (max 2MB).");
+      } else {
+        setErr(e?.response?.data?.message || e?.message || "Server xatosi. Qayta urinib koring.");
+      }
     } finally {
       setBusy(false);
     }
@@ -657,12 +731,25 @@ function FoodFormModal({ mode = "add", initial = null, onClose, onSaved }) {
                   onChange={(e) => setPrice(e.target.value)} placeholder="15.00" className={inputCls()} />
               </Field>
               <Field label="Kategoriya" required>
-                <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)} className={selectCls}>
-                  <option value="">-- tanlang --</option>
-                  {["Burger","Pizza","Sandwich","Grill","Snack","Dessert","Drink","Noodle","Other"].map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
+                {categories.length > 0 ? (
+                  <select value={categoryId} onChange={(e) => {
+                    setCategoryId(e.target.value);
+                    const cat = categories.find((c) => c._id === e.target.value);
+                    if (cat) setSubcategory(cat.name);
+                  }} className={selectCls}>
+                    <option value="">-- tanlang --</option>
+                    {categories.map((c) => (
+                      <option key={c._id} value={c._id}>{c.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)} className={selectCls}>
+                    <option value="">-- tanlang --</option>
+                    {["Burger","Pizza","Sandwich","Grill","Snack","Dessert","Drink","Noodle","Other"].map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                )}
               </Field>
             </div>
             <Field label="Tavsif">
@@ -863,7 +950,10 @@ function DeleteModal({ food, onClose, onDeleted }) {
       });
       localStorage.setItem("foodDeleteLog", JSON.stringify(log.slice(0, 100)));
 
-      await axios.delete(`${BASE}/food/${food._id || food.id}`);
+      const token = localStorage.getItem("sedap-token");
+      await axios.delete(`${BASE}/food/${food._id || food.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       onDeleted?.();
       onClose();
     } catch (e) {
@@ -982,15 +1072,6 @@ function FoodRow({ food, onEdit, onDelete }) {
       <td className="py-3 px-3">
         <span className="text-xs font-semibold text-green-600">${Number(food.price).toFixed(2)}</span>
       </td>
-      <td className="py-3 px-3">
-        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-          food.stockAvailable
-            ? "bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-            : "bg-red-50 text-red-400 dark:bg-red-900/30"
-        }`}>
-          {food.stockAvailable ? "Stokda" : "Stok yoq"}
-        </span>
-      </td>
       <td className="py-3 px-3 pr-4">
         <div className="flex gap-1.5">
           <Link to={`/foods/${food._id || food.id}`}>
@@ -1053,6 +1134,23 @@ function Pagination({ page, totalPages, onChange }) {
 }
 
 // ─── Main Foods Component ─────────────────────────────────────────
+// ─── Simple toast for Foods page ─────────────────────────────────
+function FoodsToast({ msg, type, onHide }) {
+  useEffect(() => {
+    const t = setTimeout(onHide, 3500);
+    return () => clearTimeout(t);
+  }, [msg]);
+  if (!msg) return null;
+  return (
+    <div className={`fixed top-5 right-5 z-[200] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-white text-sm font-medium
+      ${type === "error" ? "bg-red-500" : "bg-green-500"}`}
+      style={{ animation: "slideIn .25s ease" }}>
+      <span>{type === "error" ? "✕" : "✓"}</span>
+      <span>{msg}</span>
+    </div>
+  );
+}
+
 function Foods() {
   const dispatch           = useDispatch();
   const { foods, loading } = useSelector((s) => s.food);
@@ -1065,12 +1163,27 @@ function Foods() {
   const [showAdd,    setShowAdd]    = useState(false);
   const [editFood,   setEditFood]   = useState(null);
   const [deleteFood, setDeleteFood] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [toast,      setToast]      = useState({ msg: "", type: "success" });
+
+  const showToast = (msg, type = "success") => setToast({ msg, type });
+  const hideToast = () => setToast({ msg: "", type: "success" });
 
   useEffect(() => {
     dispatch(fetchFoods());
+    const token = localStorage.getItem("sedap-token");
+    axios.get(`${BASE}/category`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        const data = res.data?.data || res.data || [];
+        if (Array.isArray(data) && data.length) setCategories(data);
+      })
+      .catch(() => {});
   }, [dispatch]);
 
-  const refresh = () => dispatch(fetchFoods());
+  const refresh = (msg) => {
+    dispatch(fetchFoods());
+    if (msg) showToast(msg);
+  };
 
   const normalizedFoods = (foods ?? []).map((f) => ({
     ...f,
@@ -1086,6 +1199,8 @@ function Foods() {
 
   return (
     <div className="min-h-screen bg-[#f5f6fa] dark:bg-slate-900 rounded-2xl border border-gray-200/40 dark:border-slate-700">
+      <style>{`@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}`}</style>
+      <FoodsToast msg={toast.msg} type={toast.type} onHide={hideToast} />
 
       {/* Top Bar */}
       <div className="flex items-center justify-between px-8 py-5 flex-wrap gap-3">
@@ -1163,7 +1278,7 @@ function Foods() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-slate-700">
-                  {["Rasm","Nomi","Kategoriya","Narx","Stok","Amallar"].map((h) => (
+                  {["Rasm","Nomi","Kategoriya","Narx","Amallar"].map((h) => (
                     <th key={h} className="text-left text-[10px] font-semibold text-gray-400 dark:text-slate-500 px-3 py-3 first:pl-4 last:pr-4 uppercase tracking-wide">
                       {h}
                     </th>
@@ -1222,13 +1337,19 @@ function Foods() {
 
       {/* Modals */}
       {showAdd && (
-        <FoodFormModal mode="add" onClose={() => setShowAdd(false)} onSaved={refresh} />
+        <FoodFormModal mode="add" categories={categories}
+          onClose={() => setShowAdd(false)}
+          onSaved={() => { setShowAdd(false); refresh("Taom muvaffaqiyatli qoshildi!"); setPage(1); }} />
       )}
       {editFood && (
-        <FoodFormModal mode="edit" initial={editFood} onClose={() => setEditFood(null)} onSaved={refresh} />
+        <FoodFormModal mode="edit" initial={editFood} categories={categories}
+          onClose={() => setEditFood(null)}
+          onSaved={() => { setEditFood(null); refresh("Taom muvaffaqiyatli yangilandi!"); }} />
       )}
       {deleteFood && (
-        <DeleteModal food={deleteFood} onClose={() => setDeleteFood(null)} onDeleted={refresh} />
+        <DeleteModal food={deleteFood}
+          onClose={() => setDeleteFood(null)}
+          onDeleted={() => { setDeleteFood(null); refresh("Taom ochirildi."); }} />
       )}
     </div>
   );

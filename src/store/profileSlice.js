@@ -10,7 +10,6 @@ const authHeaders = () => {
 };
 
 // ─── PROFILE ───────────────────────────────────────────────────────────────────
-// GET /profile — name always comes from auth session (login), not backend field
 export const fetchProfile = createAsyncThunk(
   "profile/fetchProfile",
   async (_, { rejectWithValue }) => {
@@ -18,10 +17,10 @@ export const fetchProfile = createAsyncThunk(
     const nameFromSession = session?.fullName || session?.name || session?.login || "User";
 
     try {
-      const res = await axios.get(`${BASE_URL}/profile`, authHeaders());
-      const d   = res.data?.data || res.data || {};
+      const res = await axios.get(`${BASE_URL}/auth/me`, authHeaders());
+      const d   = res.data?.data || res.data?.user || res.data || {};
       return {
-        name:     nameFromSession,
+        name:     d.fullName || d.name || nameFromSession,
         email:    d.email    || session?.email || "",
         role:     d.role     || d.position     || "",
         phone:    d.phone    || d.phoneNumber  || "",
@@ -29,7 +28,6 @@ export const fetchProfile = createAsyncThunk(
         avatar:   d.avatar   || d.image        || null,
       };
     } catch {
-      // /profile may not exist yet — still return session name
       return {
         name:     nameFromSession,
         email:    session?.email || "",
@@ -42,24 +40,24 @@ export const fetchProfile = createAsyncThunk(
   }
 );
 
-// PUT /profile — only phone, location, avatar are sent (name is never changed by user)
+// PUT /auth/me
 export const updateProfile = createAsyncThunk(
   "profile/updateProfile",
   async ({ phone, location, avatar }, { getState, rejectWithValue }) => {
     try {
       const payload = {};
-      if (phone    !== undefined) payload.phone    = phone;
-      if (location !== undefined) payload.location = location;
+      if (phone    !== undefined) { payload.phone   = phone;    payload.phoneNumber = phone; }
+      if (location !== undefined) { payload.location = location; payload.address    = location; }
       if (avatar   !== undefined) payload.avatar   = avatar;
 
-      const res     = await axios.put(`${BASE_URL}/profile`, payload, authHeaders());
-      const d       = res.data?.data || res.data || {};
+      const res     = await axios.put(`${BASE_URL}/auth/me`, payload, authHeaders());
+      const d       = res.data?.data || res.data?.user || res.data || {};
       const session = getSession();
       const current = getState().profile.profile;
 
       return {
         ...current,
-        name:     session?.fullName || session?.name || current.name,
+        name:     d.fullName || d.name || session?.fullName || session?.name || current.name,
         phone:    d.phone    || d.phoneNumber || payload.phone    || current.phone,
         location: d.location || d.address    || payload.location || current.location,
         avatar:   d.avatar   || d.image      || payload.avatar   || current.avatar,
@@ -70,16 +68,35 @@ export const updateProfile = createAsyncThunk(
   }
 );
 
+// PUT /auth/me/password
 export const updatePassword = createAsyncThunk(
   "profile/updatePassword",
   async ({ currentPassword, newPassword }, { rejectWithValue }) => {
     try {
       await axios.put(
-        `${BASE_URL}/profile/password`,
+        `${BASE_URL}/auth/me/password`,
         { currentPassword, newPassword },
         authHeaders()
       );
       return true;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
+// ─── DASHBOARD STATS ────────────────────────────────────────────────────────────
+export const fetchDashboardStats = createAsyncThunk(
+  "profile/fetchDashboardStats",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await axios.get(`${BASE_URL}/dashboard`, authHeaders());
+      const d   = res.data?.data || res.data || {};
+      return {
+        totalOrders: Number(d.totalOrders ?? d.total_orders ?? 0),
+        completed:   Number(d.completed   ?? d.completedOrders ?? d.readyOrders ?? 0),
+        pending:     Number(d.pending     ?? d.pendingOrders   ?? 0),
+      };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
     }
@@ -99,6 +116,7 @@ export const createFood = createAsyncThunk(
         category: item.category?.name || item.category || foodData.category,
         price:    item.price    ?? foodData.price,
         stock:    item.stock    ?? foodData.stock,
+        image:    item.image    || null,
       };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
@@ -118,6 +136,7 @@ export const editFood = createAsyncThunk(
         category: item.category?.name || item.category || foodData.category,
         price:    item.price    ?? foodData.price,
         stock:    item.stock    ?? foodData.stock,
+        image:    item.image    || null,
       };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
@@ -209,6 +228,8 @@ const profileSlice = createSlice({
     profileSaving:  false,
     passwordSaving: false,
     passwordError:  null,
+    dashboardStats:        { totalOrders: 0, completed: 0, pending: 0 },
+    dashboardStatsLoading: false,
     foods:           [],
     foodsLoading:   false,
     foodsError:     null,
@@ -239,6 +260,11 @@ const profileSlice = createSlice({
       .addCase(updatePassword.pending,   (s) => { s.passwordSaving = true;  s.passwordError = null; })
       .addCase(updatePassword.fulfilled, (s) => { s.passwordSaving = false; })
       .addCase(updatePassword.rejected,  (s, a) => { s.passwordSaving = false; s.passwordError = a.payload; });
+
+    builder
+      .addCase(fetchDashboardStats.pending,   (s) => { s.dashboardStatsLoading = true; })
+      .addCase(fetchDashboardStats.fulfilled, (s, a) => { s.dashboardStatsLoading = false; s.dashboardStats = a.payload; })
+      .addCase(fetchDashboardStats.rejected,  (s) => { s.dashboardStatsLoading = false; });
 
     builder
       .addCase(createFood.pending,   (s) => { s.foodSaving = true; })
@@ -282,17 +308,19 @@ const profileSlice = createSlice({
 
 export const { setFoods, clearPasswordError } = profileSlice.actions;
 
-export const selectProfile         = (s) => s.profile.profile;
-export const selectProfileLoading  = (s) => s.profile.profileLoading;
-export const selectProfileSaving   = (s) => s.profile.profileSaving;
-export const selectProfileError    = (s) => s.profile.profileError;
-export const selectPasswordSaving  = (s) => s.profile.passwordSaving;
-export const selectPasswordError   = (s) => s.profile.passwordError;
-export const selectFoods           = (s) => s.profile.foods;
-export const selectFoodsLoading    = (s) => s.profile.foodsLoading;
-export const selectFoodSaving      = (s) => s.profile.foodSaving;
-export const selectPayments        = (s) => s.profile.payments;
-export const selectPaymentsLoading = (s) => s.profile.paymentsLoading;
-export const selectPaymentSaving   = (s) => s.profile.paymentSaving;
+export const selectProfile              = (s) => s.profile.profile;
+export const selectProfileLoading       = (s) => s.profile.profileLoading;
+export const selectProfileSaving        = (s) => s.profile.profileSaving;
+export const selectProfileError         = (s) => s.profile.profileError;
+export const selectPasswordSaving       = (s) => s.profile.passwordSaving;
+export const selectPasswordError        = (s) => s.profile.passwordError;
+export const selectDashboardStats       = (s) => s.profile.dashboardStats;
+export const selectDashboardStatsLoading = (s) => s.profile.dashboardStatsLoading;
+export const selectFoods                = (s) => s.profile.foods;
+export const selectFoodsLoading         = (s) => s.profile.foodsLoading;
+export const selectFoodSaving           = (s) => s.profile.foodSaving;
+export const selectPayments             = (s) => s.profile.payments;
+export const selectPaymentsLoading      = (s) => s.profile.paymentsLoading;
+export const selectPaymentSaving        = (s) => s.profile.paymentSaving;
 
 export default profileSlice.reducer;

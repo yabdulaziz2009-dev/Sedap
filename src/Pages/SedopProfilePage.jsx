@@ -13,14 +13,52 @@ import {
   fetchProfile, updateProfile, updatePassword,
   createFood, editFood, removeFood,
   fetchWallet, updateWallet,
+  fetchDashboardStats,
   setFoods, clearPasswordError,
   selectProfile, selectProfileLoading, selectProfileSaving,
   selectPasswordSaving, selectPasswordError,
+  selectDashboardStats,
   selectFoods, selectFoodSaving,
   selectPayments, selectPaymentsLoading,
 } from "../store/profileSlice";
 
 import { fetchFoods } from "../store/slices/Food";
+
+// ─── Menu food image with smart fallback ───────────────────────────────────────
+const FOOD_FALLBACKS = {
+  pizza:    "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=80&q=70",
+  burger:   "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=80&q=70",
+  drink:    "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=80&q=70",
+  noodle:   "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=80&q=70",
+  salad:    "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=80&q=70",
+  dessert:  "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=80&q=70",
+  snack:    "https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=80&q=70",
+  sandwich: "https://images.unsplash.com/photo-1606755962773-d324e9a13086?w=80&q=70",
+  grill:    "https://images.unsplash.com/photo-1544025162-d76538775574?w=80&q=70",
+  default:  "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=80&q=70",
+};
+
+function getFoodFallback(name = "", category = "") {
+  const text = `${name} ${category}`.toLowerCase();
+  for (const [key, url] of Object.entries(FOOD_FALLBACKS)) {
+    if (key !== "default" && text.includes(key)) return url;
+  }
+  return FOOD_FALLBACKS.default;
+}
+
+function MenuFoodImage({ src, name, category }) {
+  const fallback = getFoodFallback(name, category);
+  const [imgSrc, setImgSrc] = useState(src || fallback);
+  useEffect(() => { setImgSrc(src || fallback); }, [src]);
+  return (
+    <img
+      src={imgSrc}
+      alt={name}
+      className="w-full h-full object-cover"
+      onError={() => setImgSrc(fallback)}
+    />
+  );
+}
 
 // ─── Toast ─────────────────────────────────────────────────────────────────────
 function Toast({ toasts, removeToast }) {
@@ -169,6 +207,7 @@ export default function SedopProfilePage() {
   const profileSaving   = useSelector(selectProfileSaving);
   const passwordSaving  = useSelector(selectPasswordSaving);
   const passwordError   = useSelector(selectPasswordError);
+  const dashboardStats  = useSelector(selectDashboardStats);
   const foods           = useSelector(selectFoods);
   const foodSaving      = useSelector(selectFoodSaving);
   const payments        = useSelector(selectPayments);
@@ -177,6 +216,7 @@ export default function SedopProfilePage() {
   // ── Bootstrap ──────────────────────────────────────────────────────────────
   useEffect(() => {
     dispatch(fetchProfile());
+    dispatch(fetchDashboardStats());
     dispatch(fetchFoods()).then((a) => {
       if (a.payload) dispatch(setFoods(a.payload));
     });
@@ -346,12 +386,12 @@ export default function SedopProfilePage() {
     } else addToast(result.payload || "Failed to update status", "error");
   };
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
+  // ── Stats — real data from GET /dashboard ──────────────────────────────────
   const stats = [
-    { title: "Total Orders", value: payments.length.toString(),                                          icon: ShoppingBag,  trend: "+12%" },
-    { title: "Completed",    value: payments.filter((p) => p.status === "Completed").length.toString(),  icon: CheckCircle2, trend: "+8%"  },
-    { title: "Pending",      value: payments.filter((p) => p.status === "Pending").length.toString(),    icon: Clock,        trend: "-3%"  },
-    { title: "Menu Items",   value: foods.length.toString(),                                             icon: Star,         trend: "+21%" },
+    { title: "Total Orders", value: dashboardStats.totalOrders.toString(), icon: ShoppingBag,  trend: "+12%" },
+    { title: "Completed",    value: dashboardStats.completed.toString(),    icon: CheckCircle2, trend: "+8%"  },
+    { title: "Pending",      value: dashboardStats.pending.toString(),      icon: Clock,        trend: "-3%"  },
+    { title: "Menu Items",   value: foods.length.toString(),                icon: Star,         trend: "+21%" },
   ];
 
   const initials  = (profile.name || "U").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
@@ -524,10 +564,10 @@ export default function SedopProfilePage() {
               <div className="divide-y divide-gray-50">
                 {foods.map((item) => (
                   <div key={item.id} className="flex items-center justify-between py-3 gap-4 hover:bg-gray-50/50 rounded-xl px-2 -mx-2 transition-colors">
-                    {/* Icon + name + meta */}
+                    {/* Image + name + meta */}
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 shrink-0">
-                        <Utensils size={16} />
+                      <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-gray-100">
+                        <MenuFoodImage src={item.image} name={item.name} category={item.category} />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">

@@ -3,11 +3,16 @@ import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
+const authHeaders = () => {
+  const token = localStorage.getItem("sedap-token");
+  return { headers: { Authorization: `Bearer ${token}` } };
+};
+
 export const fetchFoods = createAsyncThunk(
   "food/fetchFood",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axios.get(`${BASE_URL}/food`);
+      const res = await axios.get(`${BASE_URL}/food`, authHeaders());
 
       const foods = res.data?.data || [];
 
